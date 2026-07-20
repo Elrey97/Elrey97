@@ -182,6 +182,35 @@
   .recipe .rbody { padding: 4px 0 10px; font-size: 0.88rem; color: var(--text-secondary); }
   .recipe .rbody ul, .recipe .rbody ol { padding-left: 20px; margin: 6px 0; }
   .recipe .rmeta { font-size: 0.78rem; color: var(--muted); }
+  .fab {
+    position: fixed; right: 14px; bottom: 76px; z-index: 40;
+    width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--accent); color: #fff; font-size: 1.4rem; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25); font-family: inherit;
+  }
+  .fab.running { background: var(--good); }
+  .timer-panel {
+    position: fixed; right: 14px; bottom: 140px; z-index: 40;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); display: none; width: 240px;
+  }
+  .timer-panel.open { display: block; }
+  .timer-display { font-size: 2.2rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+  .timer-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+  .timer-presets button {
+    padding: 8px 0; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--page); color: var(--text-primary); cursor: pointer; font-family: inherit; font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-presets button.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .timer-row { display: flex; gap: 6px; }
+  .timer-row .btn { flex: 1; }
+  .switchrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .switchrow input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--accent); flex-shrink: 0; }
+  .switchrow input[type=time] {
+    padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--page); color: var(--text-primary); font-family: inherit;
+  }
   .toast {
     position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%);
     background: var(--text-primary); color: var(--page);
@@ -213,6 +242,14 @@
 
   <!-- ══════════════ ENTRAÎNEMENT ══════════════ -->
   <section class="tab active" id="tab-train">
+    <div class="card">
+      <div class="switchrow">
+        <input type="checkbox" id="remOn">
+        <label for="remOn" style="font-weight:600;font-size:0.9rem">⏰ Rappel d'entraînement</label>
+        <input type="time" id="remTime">
+      </div>
+      <div class="hint">Une notification t'avertira à cette heure avec la séance du jour (garde l'application ouverte ou en arrière-plan).</div>
+    </div>
     <div class="daypicker" id="dayPicker"></div>
     <div id="dayContent"></div>
   </section>
@@ -302,6 +339,20 @@
   <button data-tab="tab-grocery"><span class="ico">🛒</span>Courses</button>
   <button data-tab="tab-recipes"><span class="ico">👨‍🍳</span>Recettes</button>
 </nav>
+
+<button class="fab" id="fab" title="Chrono de repos">⏱</button>
+<div class="timer-panel" id="timerPanel">
+  <div class="timer-display" id="timerDisplay">1:30</div>
+  <div class="timer-presets" id="timerPresets"></div>
+  <div class="timer-row">
+    <button class="btn" id="timerStart">Démarrer</button>
+    <button class="btn secondary" id="timerStop">Arrêter</button>
+  </div>
+  <div class="switchrow" style="margin-top:10px">
+    <input type="checkbox" id="autoTimer">
+    <label for="autoTimer" style="font-size:0.78rem">Démarrer automatiquement après chaque exercice</label>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -522,6 +573,11 @@ let bodyWeights = store.load("bw", []);         // {date, kg}
 let grocery = store.load("grocery", null);      // [{n,q,p,checked}]
 let customExos = store.load("custom", {});      // {dayId: [{n,t}]}
 let currentDay = store.load("currentDay", suggestedDayId());
+let settings = Object.assign(
+  { reminderOn: false, reminderTime: "18:00", restSecs: 90, autoTimer: true, lastReminded: "" },
+  store.load("settings", {})
+);
+function saveSettings() { store.save("settings", settings); }
 
 if (!grocery) { grocery = GROCERY_DEFAULT.map(g => ({ ...g, checked: false })); store.save("grocery", grocery); }
 
@@ -650,6 +706,7 @@ function renderDay() {
           history.push({ date: todayISO(), dayId: day.id, exo: e.n, sets, reps, weight: w, volume });
           store.save("history", history);
           notify("Exercice terminé 💪", `${e.n} — ${sets}×${reps} @ ${w} kg (volume : ${Math.round(volume)} kg)`);
+          if (settings.autoTimer) startTimer(settings.restSecs);
         }
         renderDay(); renderProgress();
       };
@@ -955,6 +1012,109 @@ document.querySelectorAll("nav.tabs button").forEach(b => {
 });
 document.getElementById("exoSelect").onchange = function () { this.dataset.userPicked = "1"; renderChart(); };
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderChart);
+
+/* ─────────────── CHRONO DE REPOS ─────────────── */
+const TIMER_PRESETS = [60, 90, 120, 180];
+let timerEnd = null, timerTick = null;
+const fab = document.getElementById("fab");
+const timerPanel = document.getElementById("timerPanel");
+const timerDisplay = document.getElementById("timerDisplay");
+
+function fmtSecs(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+
+function renderTimerPresets() {
+  const c = document.getElementById("timerPresets");
+  c.innerHTML = "";
+  TIMER_PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.textContent = fmtSecs(p);
+    if (p === settings.restSecs) b.classList.add("sel");
+    b.onclick = () => {
+      settings.restSecs = p; saveSettings(); renderTimerPresets();
+      if (!timerEnd) timerDisplay.textContent = fmtSecs(p);
+    };
+    c.appendChild(b);
+  });
+}
+
+function beep() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25, 0.5].forEach(t => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.3, ac.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + t + 0.2);
+      o.start(ac.currentTime + t); o.stop(ac.currentTime + t + 0.22);
+    });
+  } catch {}
+}
+
+function startTimer(secs) {
+  clearInterval(timerTick);
+  timerEnd = Date.now() + secs * 1000;
+  fab.classList.add("running");
+  timerDisplay.textContent = fmtSecs(secs);
+  timerTick = setInterval(() => {
+    const left = (timerEnd - Date.now()) / 1000;
+    if (left <= 0) {
+      stopTimer();
+      beep();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      notify("Repos terminé ⏱", "Allez, exercice suivant ! 💪");
+    } else {
+      timerDisplay.textContent = fmtSecs(left);
+      fab.textContent = String(Math.ceil(left));
+    }
+  }, 250);
+}
+
+function stopTimer() {
+  clearInterval(timerTick);
+  timerTick = null; timerEnd = null;
+  fab.classList.remove("running");
+  fab.textContent = "⏱";
+  timerDisplay.textContent = fmtSecs(settings.restSecs);
+}
+
+fab.onclick = () => timerPanel.classList.toggle("open");
+document.getElementById("timerStart").onclick = () => startTimer(settings.restSecs);
+document.getElementById("timerStop").onclick = stopTimer;
+const autoTimerBox = document.getElementById("autoTimer");
+autoTimerBox.checked = settings.autoTimer;
+autoTimerBox.onchange = e => { settings.autoTimer = e.target.checked; saveSettings(); };
+renderTimerPresets();
+timerDisplay.textContent = fmtSecs(settings.restSecs);
+
+/* ─────────────── RAPPEL D'ENTRAÎNEMENT ─────────────── */
+const remOn = document.getElementById("remOn");
+const remTime = document.getElementById("remTime");
+remOn.checked = settings.reminderOn;
+remTime.value = settings.reminderTime;
+remOn.onchange = e => {
+  settings.reminderOn = e.target.checked; saveSettings();
+  if (settings.reminderOn) {
+    if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
+    toast("Rappel activé à " + settings.reminderTime + " ⏰");
+  } else {
+    toast("Rappel désactivé");
+  }
+};
+remTime.onchange = e => {
+  settings.reminderTime = e.target.value || "18:00"; saveSettings();
+  if (settings.reminderOn) toast("Rappel réglé à " + settings.reminderTime + " ⏰");
+};
+setInterval(() => {
+  if (!settings.reminderOn) return;
+  const now = new Date();
+  const hm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  if (hm === settings.reminderTime && settings.lastReminded !== todayISO()) {
+    settings.lastReminded = todayISO(); saveSettings();
+    const day = PROGRAM.find(p => p.id === suggestedDayId());
+    notify("C'est l'heure de t'entraîner 💪", "Au programme aujourd'hui : " + day.title);
+  }
+}, 20000);
 
 /* ─────────────── PWA (installation comme vraie application) ─────────────── */
 if ("serviceWorker" in navigator && location.protocol === "https:") {

@@ -36,11 +36,28 @@ L'application s'ouvre alors en plein écran avec sa propre icône 💪, et fonct
 - **Rappel d'entraînement** : choisir une heure → notification quotidienne avec la séance du jour (l'application doit être ouverte ou en arrière-plan)
 - **Chrono de repos** : bouton flottant ⏱ avec durées 1:00 / 1:30 / 2:00 / 3:00, démarrage automatique après chaque exercice terminé (désactivable), bip + vibration + notification à la fin
 
+### 💪 Entraînement avancé
+- Enregistrement **série par série** (bouton « + Série »), le chrono de repos démarre après chaque série
+- **Records personnels** : notification 🏆 quand une charge dépasse l'ancien record
+- **1RM estimé** (charge maximale théorique, formule d'Epley) par exercice
+- **Suggestion de progression** : quand l'objectif de répétitions est atteint, l'appli propose +2,5 kg
+
 ### 📈 Évolution
 - Statistiques : séances terminées, volume total soulevé, séances de la semaine
+- **Calendrier du mois** avec jours d'entraînement colorés et série de jours consécutifs 🔥 (un jour de repos ne casse pas la série)
+- **Volume par groupe musculaire** sur 30 jours (barres comparatives)
+- **Comparaison semaine par semaine** (séances et volume)
 - Graphique de progression de la charge par exercice (avec vue tableau)
-- Suivi du poids corporel
+- Suivi du poids corporel avec **objectif de poids**
+- **Mensurations** (bras, poitrine, taille, cuisse) avec évolution
+- **Export / import des données** (fichier de sauvegarde JSON)
 - Historique des 15 dernières performances
+
+### 🎯 Nutrition avancée
+- **Calculateur de besoins** (Mifflin-St Jeor) : calories et protéines selon sexe, âge, taille, poids, activité et objectif (sèche / maintien / masse)
+- **Journal alimentaire du jour** avec barres de progression vers les objectifs
+- **Scanner de code-barres** 📷 (caméra + base Open Food Facts) pour ajouter un produit automatiquement — sur la version en ligne (GitHub Pages), Chrome Android ; saisie manuelle du code en secours
+- **Compteur d'eau** 💧 (objectif 10 verres / 2,5 L)
 
 ### 🍽️ Repas
 - Programme alimentaire sur 7 jours, adapté au programme d'entraînement (protéines les jours de muscu, plus léger au repos), avec des plats disponibles localement (tvorog, grechka, kéfir, syrniki...)

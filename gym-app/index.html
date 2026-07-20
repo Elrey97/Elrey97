@@ -278,6 +278,7 @@
   <section class="tab" id="tab-recipes">
     <div class="card">
       <h2>👨‍🍳 Recettes</h2>
+      <div class="daypicker" id="recipeFilter"></div>
       <div id="recipes"></div>
     </div>
   </section>
@@ -432,25 +433,60 @@ const GROCERY_DEFAULT = [
 ];
 
 /* ─────────────── RECETTES ─────────────── */
+/* cat : "masse" = prise de masse · "minceur" = perte de poids · "equilibre" = équilibré */
 const RECIPES = [
-  { t: "Poulet grillé & sarrasin", meta: "≈ 650 kcal · 55 g protéines · 20 min",
+  { t: "Poulet grillé & sarrasin", cat: "equilibre", meta: "≈ 650 kcal · 55 g protéines · 20 min",
     ing: ["200 g de filet de poulet", "80 g de sarrasin (cru)", "1 c. à s. d'huile d'olive", "Paprika, ail, sel, poivre", "Légumes au choix"],
     steps: ["Cuire le sarrasin dans 2 volumes d'eau salée (15 min).", "Assaisonner le poulet (paprika, ail, sel, poivre).", "Griller à la poêle 5-6 min par côté.", "Servir avec les légumes et un filet d'huile d'olive."] },
-  { t: "Syrniki protéinés", meta: "≈ 450 kcal · 35 g protéines · 15 min",
+  { t: "Syrniki protéinés", cat: "equilibre", meta: "≈ 450 kcal · 35 g protéines · 15 min",
     ing: ["250 g de tvorog", "1 œuf", "3 c. à s. de farine d'avoine", "1 c. à s. de miel", "Une pincée de vanille"],
     steps: ["Mélanger tvorog, œuf, farine et vanille.", "Former des galettes épaisses.", "Cuire à feu moyen 3-4 min par côté.", "Servir avec le miel et des fruits rouges."] },
-  { t: "Bœuf mijoté aux betteraves", meta: "≈ 600 kcal · 45 g protéines · 50 min",
+  { t: "Bœuf mijoté aux betteraves", cat: "equilibre", meta: "≈ 600 kcal · 45 g protéines · 50 min",
     ing: ["200 g de bœuf maigre en cubes", "2 betteraves", "1 oignon, 1 carotte", "1 c. à s. de concentré de tomate", "Laurier, sel, poivre"],
     steps: ["Saisir le bœuf, réserver.", "Faire revenir oignon et carotte, ajouter le concentré.", "Remettre le bœuf, couvrir d'eau, ajouter betteraves et laurier.", "Mijoter 40 min à couvert. Servir avec du sarrasin."] },
-  { t: "Omelette du sportif", meta: "≈ 500 kcal · 40 g protéines · 10 min",
+  { t: "Omelette du sportif", cat: "equilibre", meta: "≈ 500 kcal · 40 g protéines · 10 min",
     ing: ["4 œufs", "50 g de fromage", "1 tomate", "Épinards ou oignon vert", "1 tranche de pain complet"],
     steps: ["Battre les œufs, saler, poivrer.", "Verser dans la poêle chaude, ajouter tomate et épinards.", "Ajouter le fromage, plier l'omelette.", "Servir avec le pain complet."] },
-  { t: "Saumon au four & pommes de terre", meta: "≈ 700 kcal · 42 g protéines · 35 min",
+  { t: "Saumon au four & pommes de terre", cat: "equilibre", meta: "≈ 700 kcal · 42 g protéines · 35 min",
     ing: ["200 g de saumon (ou maquereau)", "300 g de pommes de terre", "1 citron", "Aneth, ail, huile d'olive"],
     steps: ["Préchauffer le four à 200 °C.", "Disposer pommes de terre en quartiers, huiler, saler. Enfourner 15 min.", "Ajouter le saumon avec citron, aneth et ail.", "Cuire encore 15-18 min."] },
-  { t: "Shake maison post-entraînement", meta: "≈ 400 kcal · 30 g protéines · 5 min",
+  { t: "Shake maison post-entraînement", cat: "masse", meta: "≈ 400 kcal · 30 g protéines · 5 min",
     ing: ["250 ml de lait ou kéfir", "150 g de tvorog", "1 banane", "1 c. à s. de miel", "40 g de flocons d'avoine"],
     steps: ["Tout mettre dans le blender.", "Mixer 30-60 secondes.", "Boire dans les 30 min après la séance."] },
+
+  /* ── Prise de masse ── */
+  { t: "Plov au poulet (riz pilaf)", cat: "masse", meta: "≈ 850 kcal · 50 g protéines · 45 min",
+    ing: ["250 g de cuisses de poulet désossées", "120 g de riz (cru)", "1 carotte, 1 oignon", "2 gousses d'ail", "2 c. à s. d'huile, cumin, sel"],
+    steps: ["Faire dorer le poulet dans l'huile, ajouter oignon et carotte râpée.", "Ajouter le riz, l'ail et le cumin, couvrir d'eau (2 cm au-dessus).", "Cuire à couvert 25 min à feu doux sans remuer.", "Laisser reposer 5 min avant de servir."] },
+  { t: "Pâtes crémeuses au poulet", cat: "masse", meta: "≈ 900 kcal · 60 g protéines · 25 min",
+    ing: ["200 g de filet de poulet", "120 g de pâtes (crues)", "100 ml de crème (smetana possible)", "50 g de fromage râpé", "Ail, sel, poivre"],
+    steps: ["Cuire les pâtes al dente.", "Griller le poulet en morceaux avec l'ail.", "Ajouter la crème et le fromage, laisser épaissir 3 min.", "Mélanger avec les pâtes et servir bien chaud."] },
+  { t: "Bol gainer bœuf-riz-œufs", cat: "masse", meta: "≈ 950 kcal · 55 g protéines · 25 min",
+    ing: ["150 g de bœuf haché", "100 g de riz (cru)", "2 œufs au plat", "1/2 avocat ou 1 c. à s. d'huile d'olive", "Sauce soja, oignon vert"],
+    steps: ["Cuire le riz.", "Faire revenir le bœuf haché avec l'oignon.", "Cuire les œufs au plat.", "Assembler le bol : riz, bœuf, œufs, filet de sauce soja."] },
+  { t: "Porridge gainer du matin", cat: "masse", meta: "≈ 750 kcal · 30 g protéines · 10 min",
+    ing: ["80 g de flocons d'avoine", "300 ml de lait entier", "1 banane", "2 c. à s. de beurre de cacahuète", "1 c. à s. de miel, noix"],
+    steps: ["Cuire l'avoine dans le lait 5 min.", "Ajouter le beurre de cacahuète et le miel.", "Couper la banane par-dessus, parsemer de noix.", "Idéal avant une grosse séance ou au petit-déjeuner."] },
+  { t: "Sandwich protéiné double", cat: "masse", meta: "≈ 700 kcal · 45 g protéines · 10 min",
+    ing: ["4 tranches de pain complet", "150 g de poulet ou dinde cuit(e)", "2 œufs durs", "Fromage (2 tranches)", "Tomate, concombre, yaourt nature en sauce"],
+    steps: ["Tartiner le pain de yaourt nature salé/poivré.", "Garnir de poulet, œufs en rondelles, fromage et légumes.", "Refermer, couper en deux.", "Parfait en collation après l'entraînement."] },
+
+  /* ── Perte de poids ── */
+  { t: "Salade de poulet croquante", cat: "minceur", meta: "≈ 380 kcal · 42 g protéines · 15 min",
+    ing: ["180 g de filet de poulet grillé", "Concombre, tomate, chou blanc", "1 œuf dur", "1 c. à c. d'huile d'olive + citron", "Aneth, sel, poivre"],
+    steps: ["Griller le poulet sans matière grasse (ou presque).", "Émincer les légumes, couper l'œuf.", "Assaisonner avec huile, citron et aneth.", "Mélanger le tout — copieux et léger."] },
+  { t: "Poisson blanc vapeur & brocoli", cat: "minceur", meta: "≈ 320 kcal · 40 g protéines · 20 min",
+    ing: ["200 g de poisson blanc (cabillaud, merlu)", "300 g de brocoli", "Citron, aneth", "1 c. à c. d'huile d'olive"],
+    steps: ["Cuire le poisson et le brocoli à la vapeur 12-15 min.", "Arroser de citron, saler légèrement.", "Ajouter l'aneth et le filet d'huile d'olive.", "Dîner idéal les soirs de repos."] },
+  { t: "Soupe légère poulet-légumes", cat: "minceur", meta: "≈ 280 kcal · 30 g protéines · 35 min",
+    ing: ["150 g de filet de poulet", "Chou, carotte, oignon, céleri", "1 petite pomme de terre", "Laurier, poivre, herbes"],
+    steps: ["Faire bouillir le poulet 15 min, l'effilocher.", "Ajouter les légumes coupés dans le bouillon.", "Cuire 15-20 min avec le laurier.", "Remettre le poulet, servir bien chaud."] },
+  { t: "Omelette blanche aux champignons", cat: "minceur", meta: "≈ 250 kcal · 30 g protéines · 10 min",
+    ing: ["4 blancs d'œufs + 1 œuf entier", "150 g de champignons", "Oignon vert, épinards si dispo", "Sel, poivre"],
+    steps: ["Faire revenir les champignons sans gras (poêle antiadhésive).", "Battre les blancs avec l'œuf entier.", "Verser sur les champignons, cuire à feu doux.", "Plier et servir avec des légumes."] },
+  { t: "Tvorog 0% aux fruits rouges", cat: "minceur", meta: "≈ 220 kcal · 32 g protéines · 5 min",
+    ing: ["200 g de tvorog 0-2 %", "100 g de fruits rouges (frais ou surgelés)", "Cannelle", "1 c. à c. de miel (optionnel)"],
+    steps: ["Écraser légèrement le tvorog à la fourchette.", "Ajouter les fruits rouges et la cannelle.", "Sucrer très légèrement au miel si besoin.", "Collation parfaite du soir : rassasiante et légère."] },
 ];
 
 /* ─────────────── ÉTAT / STOCKAGE ─────────────── */
@@ -833,10 +869,32 @@ document.getElementById("groceryReset").onclick = () => {
 };
 
 /* ─────────────── ONGLET RECETTES ─────────────── */
+const RECIPE_CATS = [
+  { id: "all", label: "Toutes" },
+  { id: "masse", label: "💪 Prise de masse" },
+  { id: "minceur", label: "🍃 Perte de poids" },
+  { id: "equilibre", label: "⚖️ Équilibré" },
+];
+let recipeFilter = "all";
+
+function renderRecipeFilter() {
+  const f = document.getElementById("recipeFilter");
+  f.innerHTML = "";
+  RECIPE_CATS.forEach(c => {
+    const b = document.createElement("button");
+    b.textContent = c.label;
+    if (c.id === recipeFilter) b.classList.add("active");
+    b.onclick = () => { recipeFilter = c.id; renderRecipeFilter(); renderRecipes(); };
+    f.appendChild(b);
+  });
+}
+
 function renderRecipes() {
-  document.getElementById("recipes").innerHTML = RECIPES.map(r => `
+  const catLabel = c => (RECIPE_CATS.find(x => x.id === c) || {}).label || "";
+  const list = RECIPES.filter(r => recipeFilter === "all" || r.cat === recipeFilter);
+  document.getElementById("recipes").innerHTML = list.map(r => `
     <details class="recipe">
-      <summary>${r.t} <div class="rmeta">${r.meta}</div></summary>
+      <summary>${r.t} <div class="rmeta">${catLabel(r.cat)} · ${r.meta}</div></summary>
       <div class="rbody">
         <b>Ingrédients :</b>
         <ul>${r.ing.map(i => `<li>${i}</li>`).join("")}</ul>
@@ -884,6 +942,7 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ren
   renderProgress();
   renderMeals();
   renderGrocery();
+  renderRecipeFilter();
   renderRecipes();
 })();
 </script>

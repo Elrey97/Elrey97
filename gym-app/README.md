@@ -35,7 +35,8 @@ Application web personnelle pour suivre le programme d'entraînement, la nutriti
 - Ajout / suppression d'articles
 
 ### 👨‍🍳 Recettes
-- 6 recettes riches en protéines avec calories, ingrédients et étapes de préparation
+- 16 recettes riches en protéines avec calories, ingrédients et étapes de préparation
+- Filtres par objectif : **💪 Prise de masse** (plats caloriques : plov, pâtes crémeuses, bol gainer, porridge...), **🍃 Perte de poids** (plats légers : salades, poisson vapeur, soupes, tvorog...) et **⚖️ Équilibré**
 
 ## Notifications
 

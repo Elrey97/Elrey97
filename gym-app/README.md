@@ -32,6 +32,10 @@ L'application s'ouvre alors en plein écran avec sa propre icône 💪, et fonct
 - Bouton **Terminer la séance** → notification récap (exercices, volume total, minutes de cardio)
 - Possibilité d'ajouter ses propres exercices à chaque jour
 
+### ⏰ Rappel & ⏱ chrono
+- **Rappel d'entraînement** : choisir une heure → notification quotidienne avec la séance du jour (l'application doit être ouverte ou en arrière-plan)
+- **Chrono de repos** : bouton flottant ⏱ avec durées 1:00 / 1:30 / 2:00 / 3:00, démarrage automatique après chaque exercice terminé (désactivable), bip + vibration + notification à la fin
+
 ### 📈 Évolution
 - Statistiques : séances terminées, volume total soulevé, séances de la semaine
 - Graphique de progression de la charge par exercice (avec vue tableau)

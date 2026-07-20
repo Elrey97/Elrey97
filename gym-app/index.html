@@ -182,6 +182,28 @@
   .recipe .rbody { padding: 4px 0 10px; font-size: 0.88rem; color: var(--text-secondary); }
   .recipe .rbody ul, .recipe .rbody ol { padding-left: 20px; margin: 6px 0; }
   .recipe .rmeta { font-size: 0.78rem; color: var(--muted); }
+  .setchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .setchips .chip { background: var(--accent-soft); border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.78rem; }
+  .cal .dow { color: var(--muted); font-size: 0.68rem; padding: 4px 0; }
+  .cal .d { padding: 7px 0; border-radius: 8px; }
+  .cal .d.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .cal .d.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .mbar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 0.8rem; }
+  .mbar { flex: 1; height: 14px; background: var(--grid); border-radius: 7px; overflow: hidden; }
+  .mbar i, .bar i { display: block; height: 100%; background: var(--series-1); border-radius: 7px; }
+  .bar { height: 10px; background: var(--grid); border-radius: 5px; overflow: hidden; margin: 2px 0 8px; }
+  .addrow input[type=number], .addrow select {
+    padding: 9px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--page); color: var(--text-primary); font-family: inherit; font-size: 0.9rem;
+  }
+  .scan-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
+    align-items: center; justify-content: center; z-index: 60; padding: 16px;
+  }
+  .scan-overlay.open { display: flex; }
+  .scan-box { background: var(--surface-1); border-radius: 14px; padding: 14px; width: 100%; max-width: 420px; }
+  .scan-box video { width: 100%; border-radius: 10px; background: #000; min-height: 200px; }
   .fab {
     position: fixed; right: 14px; bottom: 76px; z-index: 40;
     width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
@@ -272,10 +294,29 @@
         <div class="tooltip" id="chartTip"></div>
       </div>
       <div class="hint">Charge maximale enregistrée par séance pour l'exercice sélectionné.</div>
+      <div class="hint" id="oneRm" style="font-weight:600"></div>
       <details style="margin-top:10px">
         <summary style="cursor:pointer;font-size:0.85rem;color:var(--text-secondary)">Voir les données en tableau</summary>
         <div class="table-scroll"><table id="chartTable"></table></div>
       </details>
+    </div>
+
+    <div class="card">
+      <div class="flexhead">
+        <h2>📅 Calendrier du mois</h2>
+        <div class="hint" id="streakLine" style="margin:0"></div>
+      </div>
+      <div class="cal" id="calGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2>🧭 Volume par muscle (30 derniers jours)</h2>
+      <div id="muscleBars"></div>
+    </div>
+
+    <div class="card">
+      <h2>📊 Cette semaine vs la précédente</h2>
+      <div id="weekCompare"></div>
     </div>
 
     <div class="card">
@@ -284,7 +325,34 @@
         <input type="number" id="bwInput" placeholder="kg" step="0.1" style="width:110px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--page);color:var(--text-primary);font-family:inherit">
         <button class="btn" id="bwAdd">Enregistrer</button>
       </div>
+      <div class="addrow" style="margin-top:8px">
+        <input type="number" id="goalW" placeholder="Objectif kg" step="0.1" style="width:120px">
+        <button class="btn secondary" id="goalSet">Fixer l'objectif</button>
+      </div>
+      <div class="hint" id="goalLine"></div>
       <div id="bwList" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>📏 Mensurations (cm)</h2>
+      <div class="addrow">
+        <input type="number" id="mBras" placeholder="Bras" step="0.5" style="width:86px">
+        <input type="number" id="mPoitrine" placeholder="Poitrine" step="0.5" style="width:86px">
+        <input type="number" id="mTaille" placeholder="Taille" step="0.5" style="width:86px">
+        <input type="number" id="mCuisse" placeholder="Cuisse" step="0.5" style="width:86px">
+        <button class="btn" id="mAdd">Enregistrer</button>
+      </div>
+      <div id="mList" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>💾 Mes données</h2>
+      <div class="addrow">
+        <button class="btn" id="exportBtn">Exporter (sauvegarde)</button>
+        <button class="btn secondary" id="importBtn">Importer</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <div class="hint">Exporte un fichier de sauvegarde pour changer de téléphone ou ne rien perdre. L'import remplace les données actuelles.</div>
     </div>
 
     <div class="card">
@@ -295,6 +363,51 @@
 
   <!-- ══════════════ REPAS ══════════════ -->
   <section class="tab" id="tab-meals">
+    <div class="card">
+      <h2>🎯 Mes besoins (calories & protéines)</h2>
+      <div class="addrow">
+        <select id="pSexe"><option value="H">Homme</option><option value="F">Femme</option></select>
+        <input type="number" id="pAge" placeholder="Âge" style="width:80px">
+        <input type="number" id="pTaille" placeholder="Taille cm" style="width:100px">
+        <input type="number" id="pPoids" placeholder="Poids kg" step="0.1" style="width:100px">
+      </div>
+      <div class="addrow">
+        <select id="pAct">
+          <option value="1.375">Peu actif (hors sport)</option>
+          <option value="1.55" selected>Modérément actif</option>
+          <option value="1.725">Très actif</option>
+        </select>
+        <select id="pObj">
+          <option value="seche">🍃 Sèche (perte)</option>
+          <option value="maintien">⚖️ Maintien</option>
+          <option value="masse">💪 Prise de masse</option>
+        </select>
+        <button class="btn" id="pCalc">Calculer</button>
+      </div>
+      <div class="hint" id="pResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="flexhead">
+        <h2>📒 Journal du jour</h2>
+        <button class="btn small" id="scanBtn">📷 Scanner</button>
+      </div>
+      <div id="jTotals"></div>
+      <div id="jList"></div>
+      <div class="addrow">
+        <input type="text" id="jName" placeholder="Aliment...">
+        <input type="number" id="jKcal" placeholder="kcal" style="width:84px">
+        <input type="number" id="jProt" placeholder="prot g" style="width:84px">
+        <button class="btn" id="jAdd">＋</button>
+      </div>
+      <div class="switchrow" style="margin-top:14px">
+        <span style="font-size:0.9rem">💧 Eau :</span>
+        <button class="btn small secondary" id="wMinus">−</button>
+        <span id="wCount" style="font-weight:700;font-variant-numeric:tabular-nums"></span>
+        <button class="btn small" id="wPlus">＋</button>
+      </div>
+    </div>
+
     <div class="card">
       <h2>🍽️ Programme alimentaire de la semaine</h2>
       <p class="hint" style="margin-top:0;margin-bottom:8px">Adapté à ton programme : riche en protéines les jours d'entraînement, plus léger le jour de repos.</p>
@@ -339,6 +452,18 @@
   <button data-tab="tab-grocery"><span class="ico">🛒</span>Courses</button>
   <button data-tab="tab-recipes"><span class="ico">👨‍🍳</span>Recettes</button>
 </nav>
+
+<div class="scan-overlay" id="scanOverlay">
+  <div class="scan-box">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="hint" id="scanHint">Vise le code-barres du produit 📷</div>
+    <div class="addrow">
+      <input type="text" id="scanManual" placeholder="Ou tape le code-barres...">
+      <button class="btn" id="scanLookup">OK</button>
+    </div>
+    <button class="btn danger" id="scanClose" style="width:100%;margin-top:10px">Fermer</button>
+  </div>
+</div>
 
 <button class="fab" id="fab" title="Chrono de repos">⏱</button>
 <div class="timer-panel" id="timerPanel">
@@ -663,17 +788,22 @@ function renderDay() {
     const isCardio = !!e.cardio;
     const div = document.createElement("div");
     div.className = "exo" + (isDone ? " done" : "");
-    let lastTxt = "";
+    let lastTxt = "", sugg = "";
     if (last) {
       lastTxt = isCardio
         ? ` · Dernière fois : ${last.minutes || "?"} min`
         : ` · Dernière fois : ${last.sets}×${last.reps} @ ${last.weight} kg`;
+      if (!isCardio && last.weight) {
+        const up = upperTarget(e.t);
+        if (up && last.reps >= up) sugg = ` · 💡 Essaie ${+(last.weight + 2.5).toFixed(1)} kg`;
+      }
     }
+    const pend = isCardio || isDone ? [] : pendingSets(day.id, e.n);
     div.innerHTML = `
       <div class="exo-head">
         <div>
           <div class="name">${e.n}</div>
-          <div class="target">Objectif : ${e.t}${lastTxt}</div>
+          <div class="target">Objectif : ${e.t}${lastTxt}${sugg}</div>
         </div>
         ${isDone ? '<span class="donebadge">✓ Fait</span>' : ""}
       </div>
@@ -682,31 +812,50 @@ function renderDay() {
         <div><label>Minutes</label><input type="number" class="i-min" min="1" placeholder="30"></div>
         <button class="btn small b-done">Terminer ✓</button>
       </div>` : `
+      ${pend.length ? `<div class="setchips">${pend.map((s, i) => `<span class="chip">S${i + 1} · ${s.r} × ${s.w} kg</span>`).join("")}</div>` : ""}
       <div class="inputs">
-        <div><label>Séries</label><input type="number" class="i-sets" min="1" placeholder="4"></div>
         <div><label>Reps</label><input type="number" class="i-reps" min="1" placeholder="10"></div>
         <div><label>Poids (kg)</label><input type="number" class="i-w" min="0" step="0.5" placeholder="${last ? last.weight : "kg"}"></div>
-        <button class="btn small b-done">Terminer ✓</button>
+        <button class="btn small b-set">+ Série</button>
+        <button class="btn small secondary b-done">Terminer ✓</button>
       </div>`}
     `;
-    if (!isDone) {
+    if (!isDone && isCardio) {
       div.querySelector(".b-done").onclick = () => {
-        if (isCardio) {
-          const min = parseFloat(div.querySelector(".i-min").value);
-          if (!min) { toast("Indique la durée en minutes 😉"); return; }
-          history.push({ date: todayISO(), dayId: day.id, exo: e.n, minutes: min, volume: 0 });
-          store.save("history", history);
-          notify("Exercice terminé 🏃", `${e.n} — ${min} min. Bien joué !`);
+        const min = parseFloat(div.querySelector(".i-min").value);
+        if (!min) { toast("Indique la durée en minutes 😉"); return; }
+        history.push({ date: todayISO(), dayId: day.id, exo: e.n, minutes: min, volume: 0 });
+        store.save("history", history);
+        notify("Exercice terminé 🏃", `${e.n} — ${min} min. Bien joué !`);
+        renderDay(); renderProgress();
+      };
+    } else if (!isDone) {
+      div.querySelector(".b-set").onclick = () => {
+        const r = parseFloat(div.querySelector(".i-reps").value);
+        const w = parseFloat(div.querySelector(".i-w").value) || 0;
+        if (!r) { toast("Indique les répétitions 😉"); return; }
+        pend.push({ r, w });
+        savePending();
+        toast(`Série ${pend.length} : ${r} reps @ ${w} kg ✓`);
+        if (settings.autoTimer) startTimer(settings.restSecs);
+        renderDay();
+      };
+      div.querySelector(".b-done").onclick = () => {
+        const r = parseFloat(div.querySelector(".i-reps").value);
+        const w = parseFloat(div.querySelector(".i-w").value) || 0;
+        if (pend.length === 0 && r) pend.push({ r, w });
+        if (pend.length === 0) { toast("Ajoute au moins une série 😉"); return; }
+        const maxW = Math.max(...pend.map(s => s.w));
+        const bestReps = Math.max(...pend.map(s => s.r));
+        const volume = pend.reduce((sum, s) => sum + s.r * s.w, 0);
+        const prevBest = bestWeightBefore(e.n);
+        history.push({ date: todayISO(), dayId: day.id, exo: e.n, setsList: pend.slice(), sets: pend.length, reps: bestReps, weight: maxW, volume });
+        store.save("history", history);
+        clearPending(day.id, e.n);
+        if (maxW > prevBest && prevBest > 0) {
+          notify("Nouveau record 🏆", `${e.n} : ${maxW} kg — ancien record ${prevBest} kg. Énorme !`);
         } else {
-          const sets = parseFloat(div.querySelector(".i-sets").value);
-          const reps = parseFloat(div.querySelector(".i-reps").value);
-          const w = parseFloat(div.querySelector(".i-w").value) || 0;
-          if (!sets || !reps) { toast("Indique les séries et les répétitions 😉"); return; }
-          const volume = sets * reps * w;
-          history.push({ date: todayISO(), dayId: day.id, exo: e.n, sets, reps, weight: w, volume });
-          store.save("history", history);
-          notify("Exercice terminé 💪", `${e.n} — ${sets}×${reps} @ ${w} kg (volume : ${Math.round(volume)} kg)`);
-          if (settings.autoTimer) startTimer(settings.restSecs);
+          notify("Exercice terminé 💪", `${e.n} — ${pend.length} série(s), max ${maxW} kg (volume : ${Math.round(volume)} kg)`);
         }
         renderDay(); renderProgress();
       };
@@ -799,6 +948,14 @@ function renderChart() {
   };
   svg.innerHTML = "";
   document.getElementById("chartTitle").textContent = "Progression — " + (exo || "charge (kg)");
+
+  // 1RM estimé (formule d'Epley) sur la meilleure série jamais enregistrée
+  let best1 = 0;
+  history.filter(h => h.exo === exo).forEach(h => {
+    const sets = h.setsList || (h.weight && h.reps ? [{ r: h.reps, w: h.weight }] : []);
+    sets.forEach(s => { if (s.w) best1 = Math.max(best1, s.w * (1 + s.r / 30)); });
+  });
+  document.getElementById("oneRm").textContent = best1 ? `🏋️ 1RM estimé (max théorique sur 1 rép) : ${Math.round(best1 * 2) / 2} kg` : "";
 
   if (data.length === 0) {
     svg.innerHTML = `<text x="320" y="150" text-anchor="middle" fill="${C.muted}" font-size="15" font-family="system-ui">Termine cet exercice pour voir ta progression 📈</text>`;
@@ -894,9 +1051,17 @@ function renderProgress() {
   // history
   const hl = document.getElementById("history");
   hl.innerHTML = history.slice(-15).reverse().map(h => {
-    const detail = h.minutes !== undefined ? `${h.minutes} min` : `${h.sets}×${h.reps} @ ${h.weight} kg`;
+    const detail = h.minutes !== undefined ? `${h.minutes} min`
+      : h.setsList ? h.setsList.map(s => `${s.r}×${s.w}`).join(" · ") + " kg"
+      : `${h.sets}×${h.reps} @ ${h.weight} kg`;
     return `<div class="histline"><b>${h.exo}</b> — ${detail} · ${fmtDate(h.date)}</div>`;
   }).join("") || `<div class="hint">Ton historique apparaîtra ici après ta première séance.</div>`;
+
+  renderCalendar();
+  renderMuscleBars();
+  renderWeekCompare();
+  renderGoal();
+  renderMeasures();
 }
 
 /* ─────────────── ONGLET REPAS ─────────────── */
@@ -1012,6 +1177,280 @@ document.querySelectorAll("nav.tabs button").forEach(b => {
 });
 document.getElementById("exoSelect").onchange = function () { this.dataset.userPicked = "1"; renderChart(); };
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderChart);
+
+/* ─────────────── SÉRIES EN COURS (par exercice, pour aujourd'hui) ─────────────── */
+let pending = store.load("pending", { date: todayISO(), data: {} });
+if (pending.date !== todayISO()) pending = { date: todayISO(), data: {} };
+function pendingSets(dayId, exo) { const k = dayId + "|" + exo; pending.data[k] = pending.data[k] || []; return pending.data[k]; }
+function savePending() { store.save("pending", pending); }
+function clearPending(dayId, exo) { delete pending.data[dayId + "|" + exo]; savePending(); }
+function upperTarget(t) { const m = /×\s*(\d+)(?:-(\d+))?/.exec(t || ""); return m ? parseFloat(m[2] || m[1]) : null; }
+function bestWeightBefore(exo) { let b = 0; history.forEach(h => { if (h.exo === exo && h.weight) b = Math.max(b, h.weight); }); return b; }
+
+/* ─────────────── CALENDRIER & STREAK ─────────────── */
+function calcStreak() {
+  const days = new Set(history.map(h => h.date));
+  let streak = 0, gap = 0;
+  const d = new Date();
+  if (!days.has(todayISO())) d.setDate(d.getDate() - 1);
+  for (let i = 0; i < 400; i++) {
+    const iso = d.toISOString().slice(0, 10);
+    if (days.has(iso)) { streak++; gap = 0; }
+    else { gap++; if (gap > 1) break; }  // un jour de repos ne casse pas la série
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById("calGrid");
+  const trained = new Set(history.map(h => h.date));
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth();
+  const startDow = (new Date(y, mo, 1).getDay() + 6) % 7; // lundi = 0
+  const dim = new Date(y, mo + 1, 0).getDate();
+  let html = ["L", "M", "M", "J", "V", "S", "D"].map(d => `<div class="dow">${d}</div>`).join("");
+  for (let i = 0; i < startDow; i++) html += "<div></div>";
+  for (let d = 1; d <= dim; d++) {
+    const iso = `${y}-${String(mo + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    html += `<div class="d${trained.has(iso) ? " on" : ""}${iso === todayISO() ? " today" : ""}">${d}</div>`;
+  }
+  grid.innerHTML = html;
+  const s = calcStreak();
+  document.getElementById("streakLine").textContent = s ? `🔥 ${s} jour${s > 1 ? "s" : ""} d'affilée` : "Commence ta série 🔥";
+}
+
+/* ─────────────── VOLUME PAR MUSCLE & COMPARAISON ─────────────── */
+const EXO_GROUP = {};
+PROGRAM.forEach(d => d.exos.forEach(e => { if (!(e.n in EXO_GROUP)) EXO_GROUP[e.n] = e.g || (e.cardio ? "Cardio" : "Autre"); }));
+
+function renderMuscleBars() {
+  const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  const by = {};
+  history.forEach(h => { if (h.date >= cutoff && h.volume) { const g = EXO_GROUP[h.exo] || "Autre"; by[g] = (by[g] || 0) + h.volume; } });
+  const entries = Object.entries(by).sort((a, b) => b[1] - a[1]);
+  const max = entries.length ? entries[0][1] : 1;
+  document.getElementById("muscleBars").innerHTML = entries.map(([g, v]) =>
+    `<div class="mbar-row"><span style="width:86px">${g}</span><div class="mbar"><i style="width:${Math.round(v / max * 100)}%"></i></div><span style="min-width:64px;text-align:right;font-variant-numeric:tabular-nums">${Math.round(v)} kg</span></div>`
+  ).join("") || `<div class="hint">La répartition par groupe musculaire apparaîtra après tes premières séances.</div>`;
+}
+
+function renderWeekCompare() {
+  const day7 = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  const day14 = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+  const cur = history.filter(h => h.date > day7);
+  const prev = history.filter(h => h.date > day14 && h.date <= day7);
+  const s1 = new Set(cur.map(h => h.date + h.dayId)).size, s2 = new Set(prev.map(h => h.date + h.dayId)).size;
+  const v1 = Math.round(cur.reduce((s, h) => s + (h.volume || 0), 0)), v2 = Math.round(prev.reduce((s, h) => s + (h.volume || 0), 0));
+  const delta = (a, b, unit) => { const diff = a - b; if (!a && !b) return ""; return diff === 0 ? " (=)" : ` (${diff > 0 ? "▲ +" : "▼ "}${diff}${unit})`; };
+  document.getElementById("weekCompare").innerHTML =
+    `<div class="histline">Séances : <b>${s1}</b>${delta(s1, s2, "")}</div>` +
+    `<div class="histline">Volume soulevé : <b>${v1} kg</b>${delta(v1, v2, " kg")}</div>` +
+    `<div class="hint">7 derniers jours comparés aux 7 précédents.</div>`;
+}
+
+/* ─────────────── OBJECTIF DE POIDS ─────────────── */
+function renderGoal() {
+  const inp = document.getElementById("goalW");
+  if (document.activeElement !== inp) inp.value = settings.goalWeight || "";
+  const line = document.getElementById("goalLine");
+  const lastBw = bodyWeights[bodyWeights.length - 1];
+  if (!settings.goalWeight) { line.textContent = ""; return; }
+  if (!lastBw) { line.textContent = "Enregistre ton poids pour suivre ton objectif."; return; }
+  const diff = +(lastBw.kg - settings.goalWeight).toFixed(1);
+  line.textContent = Math.abs(diff) < 0.3 ? `🎉 Objectif ${settings.goalWeight} kg atteint ! Félicitations !`
+    : diff > 0 ? `Objectif ${settings.goalWeight} kg — encore ${diff} kg à perdre 💪`
+    : `Objectif ${settings.goalWeight} kg — encore ${Math.abs(diff)} kg à prendre 💪`;
+}
+document.getElementById("goalSet").onclick = () => {
+  settings.goalWeight = parseFloat(document.getElementById("goalW").value) || null;
+  saveSettings(); renderGoal();
+  toast(settings.goalWeight ? `Objectif fixé : ${settings.goalWeight} kg 🎯` : "Objectif retiré");
+};
+
+/* ─────────────── MENSURATIONS ─────────────── */
+let measures = store.load("measures", []);
+const MEASURE_FIELDS = [["bras", "Bras", "mBras"], ["poitrine", "Poitrine", "mPoitrine"], ["taille", "Taille", "mTaille"], ["cuisse", "Cuisse", "mCuisse"]];
+
+function renderMeasures() {
+  const rows = measures.slice(-6).reverse();
+  document.getElementById("mList").innerHTML = rows.map(m => {
+    const idx = measures.indexOf(m);
+    const prev = measures[idx - 1];
+    const parts = MEASURE_FIELDS.filter(([k]) => m[k]).map(([k, lab]) => {
+      let d = "";
+      if (prev && prev[k]) { const diff = +(m[k] - prev[k]).toFixed(1); if (diff) d = ` (${diff > 0 ? "+" : ""}${diff})`; }
+      return `${lab} ${m[k]}${d}`;
+    }).join(" · ");
+    return `<div class="histline"><b>${fmtDate(m.date)}</b> — ${parts} cm</div>`;
+  }).join("") || `<div class="hint">Mesure-toi toutes les 2 semaines, le matin, pour voir tes muscles évoluer.</div>`;
+}
+document.getElementById("mAdd").onclick = () => {
+  const entry = { date: todayISO() };
+  let any = false;
+  MEASURE_FIELDS.forEach(([k, , id]) => { const v = parseFloat(document.getElementById(id).value); if (v) { entry[k] = v; any = true; } });
+  if (!any) { toast("Remplis au moins une mesure 😉"); return; }
+  measures = measures.filter(m => m.date !== todayISO());
+  measures.push(entry);
+  measures.sort((a, b) => a.date.localeCompare(b.date));
+  store.save("measures", measures);
+  MEASURE_FIELDS.forEach(([, , id]) => document.getElementById(id).value = "");
+  renderMeasures();
+  toast("Mensurations enregistrées 📏");
+};
+
+/* ─────────────── EXPORT / IMPORT DES DONNÉES ─────────────── */
+document.getElementById("exportBtn").onclick = () => {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("gym_")) data[k] = localStorage.getItem(k); }
+  const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "mon-gym-sauvegarde-" + todayISO() + ".json";
+  a.click();
+  toast("Sauvegarde téléchargée 💾");
+};
+document.getElementById("importBtn").onclick = () => document.getElementById("importFile").click();
+document.getElementById("importFile").onchange = ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const keys = Object.keys(data).filter(k => k.startsWith("gym_"));
+      if (!keys.length) { toast("Ce fichier n'est pas une sauvegarde Mon Gym 😕"); return; }
+      if (!confirm(`Importer ${keys.length} catégorie(s) de données ? Les données actuelles seront remplacées.`)) return;
+      keys.forEach(k => localStorage.setItem(k, data[k]));
+      location.reload();
+    } catch { toast("Fichier invalide 😕"); }
+  };
+  reader.readAsText(f);
+};
+
+/* ─────────────── NUTRITION : BESOINS & JOURNAL ─────────────── */
+let nutrition = store.load("nutrition", { profile: null, journal: {} });
+function jToday() { nutrition.journal[todayISO()] = nutrition.journal[todayISO()] || { items: [], water: 0 }; return nutrition.journal[todayISO()]; }
+function saveNutrition() { store.save("nutrition", nutrition); }
+
+function renderProfile() {
+  const p = nutrition.profile;
+  if (p) {
+    document.getElementById("pSexe").value = p.sexe;
+    document.getElementById("pAge").value = p.age;
+    document.getElementById("pTaille").value = p.taille;
+    document.getElementById("pPoids").value = p.poids;
+    document.getElementById("pAct").value = p.act;
+    document.getElementById("pObj").value = p.obj;
+    const objLabel = { seche: "sèche", maintien: "maintien", masse: "prise de masse" }[p.obj];
+    document.getElementById("pResult").innerHTML = `Ton objectif quotidien (${objLabel}) : <b>${p.kcal} kcal</b> et <b>${p.prot} g de protéines</b>.`;
+  } else if (bodyWeights.length) {
+    document.getElementById("pPoids").value = bodyWeights[bodyWeights.length - 1].kg;
+  }
+}
+document.getElementById("pCalc").onclick = () => {
+  const sexe = document.getElementById("pSexe").value;
+  const age = parseFloat(document.getElementById("pAge").value);
+  const taille = parseFloat(document.getElementById("pTaille").value);
+  const poids = parseFloat(document.getElementById("pPoids").value);
+  const act = parseFloat(document.getElementById("pAct").value);
+  const obj = document.getElementById("pObj").value;
+  if (!age || !taille || !poids) { toast("Remplis âge, taille et poids 😉"); return; }
+  const bmr = 10 * poids + 6.25 * taille - 5 * age + (sexe === "H" ? 5 : -161); // Mifflin-St Jeor
+  const adj = { seche: -400, maintien: 0, masse: 300 }[obj];
+  const kcal = Math.round(bmr * act + adj);
+  const prot = Math.round(poids * (obj === "seche" ? 2.2 : 2));
+  nutrition.profile = { sexe, age, taille, poids, act, obj, kcal, prot };
+  saveNutrition(); renderProfile(); renderJournal();
+  toast(`Objectif : ${kcal} kcal / ${prot} g de protéines par jour 🎯`);
+};
+
+function renderJournal() {
+  const j = jToday();
+  const kcal = j.items.reduce((s, i) => s + (i.kcal || 0), 0);
+  const prot = +j.items.reduce((s, i) => s + (i.prot || 0), 0).toFixed(1);
+  const p = nutrition.profile;
+  let t = `<div class="grocery-total"><span>Calories</span><span>${Math.round(kcal)}${p ? " / " + p.kcal : ""} kcal</span></div>`;
+  if (p) t += `<div class="bar"><i style="width:${Math.min(100, kcal / p.kcal * 100)}%"></i></div>`;
+  t += `<div class="grocery-total" style="font-weight:400"><span>Protéines</span><span>${prot}${p ? " / " + p.prot : ""} g</span></div>`;
+  if (p) t += `<div class="bar"><i style="width:${Math.min(100, prot / p.prot * 100)}%"></i></div>`;
+  document.getElementById("jTotals").innerHTML = t;
+  document.getElementById("jList").innerHTML = j.items.map((i, idx) =>
+    `<div class="grocery-item"><div class="gi-name">${i.n} <span class="qty">· ${Math.round(i.kcal)} kcal · ${i.prot} g prot</span></div><button class="btn danger small" data-i="${idx}" style="padding:4px 9px">✕</button></div>`
+  ).join("") || `<div class="hint">Ajoute ce que tu manges — à la main ou avec le scanner 📷.</div>`;
+  document.querySelectorAll("#jList .btn.danger").forEach(b => b.onclick = () => { j.items.splice(+b.dataset.i, 1); saveNutrition(); renderJournal(); });
+  document.getElementById("wCount").textContent = (j.water || 0) + " / 10 verres";
+}
+document.getElementById("jAdd").onclick = () => {
+  const n = document.getElementById("jName").value.trim();
+  const kcal = parseFloat(document.getElementById("jKcal").value) || 0;
+  const prot = parseFloat(document.getElementById("jProt").value) || 0;
+  if (!n) { toast("Indique le nom de l'aliment 😉"); return; }
+  jToday().items.push({ n, kcal, prot });
+  saveNutrition();
+  ["jName", "jKcal", "jProt"].forEach(id => document.getElementById(id).value = "");
+  renderJournal();
+};
+document.getElementById("wPlus").onclick = () => { jToday().water = (jToday().water || 0) + 1; saveNutrition(); renderJournal(); if (jToday().water === 10) toast("Objectif hydratation atteint 💧🎉"); };
+document.getElementById("wMinus").onclick = () => { jToday().water = Math.max(0, (jToday().water || 0) - 1); saveNutrition(); renderJournal(); };
+
+/* ─────────────── SCANNER DE CODE-BARRES (Open Food Facts) ─────────────── */
+let scanStream = null, scanning = false;
+async function openScanner() {
+  document.getElementById("scanOverlay").classList.add("open");
+  document.getElementById("scanHint").textContent = "Vise le code-barres du produit 📷";
+  const video = document.getElementById("scanVideo");
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    video.srcObject = scanStream;
+    await video.play();
+    if ("BarcodeDetector" in window) {
+      const det = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a"] });
+      scanning = true;
+      const loop = async () => {
+        if (!scanning) return;
+        try { const codes = await det.detect(video); if (codes.length) { scanning = false; lookupBarcode(codes[0].rawValue); return; } } catch {}
+        requestAnimationFrame(loop);
+      };
+      loop();
+    } else {
+      document.getElementById("scanHint").textContent = "Scan automatique non supporté ici — tape le code-barres ci-dessous.";
+    }
+  } catch {
+    document.getElementById("scanHint").textContent = "Caméra indisponible — tape le code-barres du produit ci-dessous.";
+  }
+}
+function closeScanner() {
+  scanning = false;
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  document.getElementById("scanOverlay").classList.remove("open");
+}
+async function lookupBarcode(code) {
+  toast("Recherche du produit... 🔎");
+  try {
+    const r = await fetch("https://world.openfoodfacts.org/api/v2/product/" + encodeURIComponent(code) + ".json?fields=product_name,nutriments");
+    const j = await r.json();
+    if (!j.product) { toast("Produit introuvable 😕 — ajoute-le à la main"); closeScanner(); return; }
+    const name = j.product.product_name || "Produit " + code;
+    const k100 = j.product.nutriments["energy-kcal_100g"] || 0;
+    const p100 = j.product.nutriments["proteins_100g"] || 0;
+    closeScanner();
+    const g = parseFloat(prompt(`${name}\n${k100} kcal / 100 g · ${p100} g de protéines / 100 g\n\nQuantité mangée (en grammes) :`, "100"));
+    if (!g) return;
+    jToday().items.push({ n: `${name} (${g} g)`, kcal: Math.round(k100 * g / 100), prot: Math.round(p100 * g / 100 * 10) / 10 });
+    saveNutrition(); renderJournal();
+    toast("Ajouté au journal ✓");
+  } catch {
+    toast("Pas de connexion — impossible de chercher le produit");
+    closeScanner();
+  }
+}
+document.getElementById("scanBtn").onclick = openScanner;
+document.getElementById("scanClose").onclick = closeScanner;
+document.getElementById("scanLookup").onclick = () => {
+  const code = document.getElementById("scanManual").value.trim();
+  if (code) { scanning = false; lookupBarcode(code); }
+};
 
 /* ─────────────── CHRONO DE REPOS ─────────────── */
 const TIMER_PRESETS = [60, 90, 120, 180];
@@ -1135,6 +1574,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   renderGrocery();
   renderRecipeFilter();
   renderRecipes();
+  renderProfile();
+  renderJournal();
 })();
 </script>
 </body>

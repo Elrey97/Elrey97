@@ -168,6 +168,10 @@
     display: flex; justify-content: space-between; padding: 12px 0 2px;
     font-weight: 700; font-size: 1rem;
   }
+  .muscle-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); margin: 14px 0 6px;
+  }
   .recipe summary { cursor: pointer; font-weight: 600; padding: 10px 0; }
   .recipe .rbody { padding: 4px 0 10px; font-size: 0.88rem; color: var(--text-secondary); }
   .recipe .rbody ul, .recipe .rbody ol { padding-left: 20px; margin: 6px 0; }
@@ -301,62 +305,71 @@
 /* ─────────────── PROGRAMME ─────────────── */
 const PROGRAM = [
   { id: "j1", label: "J1 · Push", title: "Jour 1 — Push (pectoraux, épaules, triceps)", exos: [
-    { n: "Développé couché barre", t: "4 × 8-10" },
-    { n: "Développé incliné haltères", t: "3 × 10-12" },
-    { n: "Développé militaire", t: "4 × 8-10" },
-    { n: "Élévations latérales", t: "3 × 12-15" },
-    { n: "Dips", t: "3 × 8-12" },
-    { n: "Extensions triceps poulie", t: "3 × 12-15" },
+    { n: "Développé couché barre", t: "4 × 8-10", g: "Pectoraux" },
+    { n: "Développé incliné haltères", t: "3 × 10-12", g: "Pectoraux" },
+    { n: "Développé militaire", t: "4 × 8-10", g: "Épaules" },
+    { n: "Élévations latérales", t: "3 × 12-15", g: "Épaules" },
+    { n: "Dips", t: "3 × 8-12", g: "Triceps" },
+    { n: "Extensions triceps poulie", t: "3 × 12-15", g: "Triceps" },
+    { n: "Crunch", t: "3 × 15-20", g: "Abdos" },
+    { n: "Planche", t: "3 × 45-60 s", g: "Abdos" },
   ]},
-  { id: "j2", label: "J2 · Pull", title: "Jour 2 — Pull (dos, biceps)", exos: [
-    { n: "Tractions", t: "4 × 6-10" },
-    { n: "Rowing barre", t: "4 × 8-10" },
-    { n: "Tirage vertical poulie", t: "3 × 10-12" },
-    { n: "Rowing haltère un bras", t: "3 × 10-12" },
-    { n: "Face pull", t: "3 × 12-15" },
-    { n: "Curl biceps barre", t: "3 × 10-12" },
-    { n: "Curl marteau", t: "3 × 12" },
+  { id: "j2", label: "J2 · Pull", title: "Jour 2 — Pull (dos, biceps, trapèzes)", exos: [
+    { n: "Tractions", t: "4 × 6-10", g: "Dos" },
+    { n: "Rowing barre", t: "4 × 8-10", g: "Dos" },
+    { n: "Tirage vertical poulie", t: "3 × 10-12", g: "Dos" },
+    { n: "Shrugs haltères", t: "4 × 12-15", g: "Trapèzes" },
+    { n: "Face pull", t: "3 × 12-15", g: "Trapèzes" },
+    { n: "Curl biceps barre", t: "3 × 10-12", g: "Biceps" },
+    { n: "Curl marteau", t: "3 × 12", g: "Biceps" },
+    { n: "Tapis de course", t: "15-20 min, allure modérée", g: "Cardio", cardio: true },
   ]},
   { id: "j3", label: "J3 · Legs", title: "Jour 3 — Legs (jambes)", exos: [
-    { n: "Squat barre", t: "4 × 6-10" },
-    { n: "Presse à cuisses", t: "4 × 10-12" },
-    { n: "Fentes marchées", t: "3 × 12 (par jambe)" },
-    { n: "Leg curl allongé", t: "3 × 12-15" },
-    { n: "Extensions de jambes", t: "3 × 12-15" },
-    { n: "Mollets debout", t: "4 × 15-20" },
+    { n: "Squat barre", t: "4 × 6-10", g: "Jambes" },
+    { n: "Presse à cuisses", t: "4 × 10-12", g: "Jambes" },
+    { n: "Fentes marchées", t: "3 × 12 (par jambe)", g: "Jambes" },
+    { n: "Leg curl allongé", t: "3 × 12-15", g: "Jambes" },
+    { n: "Extensions de jambes", t: "3 × 12-15", g: "Jambes" },
+    { n: "Mollets debout", t: "4 × 15-20", g: "Mollets" },
+    { n: "Relevés de jambes suspendu", t: "3 × 10-15", g: "Abdos" },
+    { n: "Russian twist", t: "3 × 20", g: "Abdos" },
   ]},
-  { id: "j4", label: "J4 · Repos", title: "Jour 4 — Repos", exos: [], rest: true },
+  { id: "j4", label: "J4 · Repos", title: "Jour 4 — Repos actif", rest: true, exos: [
+    { n: "Marche", t: "30-40 min, rythme tranquille", g: "Cardio léger", cardio: true },
+    { n: "Étirements", t: "15-20 min, tout le corps", g: "Récupération", cardio: true },
+  ]},
   { id: "j5", label: "J5 · Haut du corps", title: "Jour 5 — Haut du corps", exos: [
-    { n: "Développé couché haltères", t: "4 × 8-10" },
-    { n: "Tractions prise large", t: "4 × 6-10" },
-    { n: "Développé épaules haltères", t: "3 × 10-12" },
-    { n: "Rowing poulie basse", t: "3 × 10-12" },
-    { n: "Écartés poulie", t: "3 × 12-15" },
-    { n: "Curl incliné", t: "3 × 10-12" },
-    { n: "Barre au front", t: "3 × 10-12" },
+    { n: "Développé couché haltères", t: "4 × 8-10", g: "Pectoraux" },
+    { n: "Écartés poulie", t: "3 × 12-15", g: "Pectoraux" },
+    { n: "Tractions prise large", t: "4 × 6-10", g: "Dos" },
+    { n: "Rowing poulie basse", t: "3 × 10-12", g: "Dos" },
+    { n: "Développé épaules haltères", t: "3 × 10-12", g: "Épaules" },
+    { n: "Oiseau (élévations buste penché)", t: "3 × 12-15", g: "Épaules" },
+    { n: "Barre au front", t: "3 × 10-12", g: "Triceps" },
+    { n: "Curl incliné", t: "3 × 10-12", g: "Biceps" },
+    { n: "Mountain climbers", t: "3 × 30 s", g: "Abdos" },
+    { n: "Planche latérale", t: "3 × 30 s (par côté)", g: "Abdos" },
   ]},
   { id: "j6", label: "J6 · Legs", title: "Jour 6 — Legs (chaîne postérieure)", exos: [
-    { n: "Soulevé de terre roumain", t: "4 × 8-10" },
-    { n: "Hip thrust", t: "4 × 10-12" },
-    { n: "Squat bulgare", t: "3 × 10 (par jambe)" },
-    { n: "Leg curl assis", t: "3 × 12-15" },
-    { n: "Abducteurs machine", t: "3 × 15" },
-    { n: "Mollets assis", t: "4 × 15-20" },
+    { n: "Soulevé de terre roumain", t: "4 × 8-10", g: "Jambes" },
+    { n: "Hip thrust", t: "4 × 10-12", g: "Jambes" },
+    { n: "Squat bulgare", t: "3 × 10 (par jambe)", g: "Jambes" },
+    { n: "Leg curl assis", t: "3 × 12-15", g: "Jambes" },
+    { n: "Abducteurs machine", t: "3 × 15", g: "Jambes" },
+    { n: "Mollets assis", t: "4 × 15-20", g: "Mollets" },
+    { n: "Vélo / elliptique", t: "15-20 min", g: "Cardio", cardio: true },
   ]},
-  { id: "cardio", label: "🏃 Cardio", title: "Cardio (2-3 × / semaine, après la muscu ou le J4)", cardio: true, exos: [
-    { n: "Tapis de course", t: "20-30 min, allure modérée", cardio: true },
-    { n: "Vélo / elliptique", t: "20-30 min", cardio: true },
+  { id: "cardio", label: "🏃 Cardio +", title: "Cardio extra (au choix, en plus du programme)", cardio: true, exos: [
+    { n: "Tapis de course (long)", t: "30-40 min, allure modérée", cardio: true },
     { n: "Corde à sauter", t: "10 × 1 min / 30 s repos", cardio: true },
     { n: "HIIT sprints", t: "8 × 30 s / 90 s repos", cardio: true },
     { n: "Marche inclinée", t: "30-40 min, pente 8-12 %", cardio: true },
   ]},
-  { id: "abdos", label: "🔥 Abdos", title: "Abdos (3 × / semaine, en fin de séance)", exos: [
-    { n: "Crunch", t: "3 × 15-20" },
-    { n: "Planche", t: "3 × 45-60 s" },
-    { n: "Relevés de jambes suspendu", t: "3 × 10-15" },
-    { n: "Russian twist", t: "3 × 20" },
-    { n: "Mountain climbers", t: "3 × 30 s" },
-    { n: "Planche latérale", t: "3 × 30 s (par côté)" },
+  { id: "abdos", label: "🔥 Abdos +", title: "Abdos extra (au choix, en plus du programme)", exos: [
+    { n: "Crunch câble", t: "3 × 15-20" },
+    { n: "Relevés de genoux", t: "3 × 15" },
+    { n: "Gainage dynamique", t: "3 × 45 s" },
+    { n: "Roulette abdos (ab wheel)", t: "3 × 8-12" },
   ]},
 ];
 
@@ -566,16 +579,23 @@ function renderDay() {
   card.innerHTML = `<h2>${day.title}</h2>`;
 
   if (day.rest) {
-    card.innerHTML += `<div class="cardio-note">😌 Aujourd'hui c'est repos ! Marche légère, étirements 15-20 min, bonne hydratation et bon sommeil. Tu peux quand même faire du cardio léger ou des abdos si tu en as envie.</div>`;
-    c.appendChild(card);
-    return;
+    card.innerHTML += `<div class="cardio-note">😌 Aujourd'hui c'est repos actif ! Bonne hydratation, bon sommeil — et si tu veux bouger un peu, la marche et les étirements ci-dessous suffisent.</div>`;
   }
   if (day.cardio) {
-    card.innerHTML += `<div class="cardio-note">🏃 Choisis 1 exercice de cardio par session. Note la durée en minutes.</div>`;
+    card.innerHTML += `<div class="cardio-note">🏃 Cardio en plus du programme : choisis 1 exercice par session et note la durée en minutes.</div>`;
   }
 
   const allExos = day.exos.concat(customExos[day.id] || []);
+  let lastGroup = null;
   allExos.forEach(e => {
+    const grp = e.g || null;
+    if (grp && grp !== lastGroup) {
+      const h = document.createElement("div");
+      h.className = "muscle-label";
+      h.textContent = grp;
+      card.appendChild(h);
+    }
+    lastGroup = grp;
     const isDone = doneToday(day.id, e.n);
     const last = lastEntry(e.n);
     const isCardio = !!e.cardio;
@@ -639,7 +659,7 @@ function renderDay() {
     const name = add.querySelector("input").value.trim();
     if (!name) return;
     customExos[day.id] = customExos[day.id] || [];
-    customExos[day.id].push({ n: name, t: "à définir", cardio: !!day.cardio });
+    customExos[day.id].push({ n: name, t: "à définir", g: "Mes exercices", cardio: !!day.cardio });
     store.save("custom", customExos);
     renderDay(); fillExoSelect();
   };

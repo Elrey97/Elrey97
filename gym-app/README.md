@@ -13,7 +13,14 @@ Application web personnelle pour suivre le programme d'entraînement, la nutriti
 ## Fonctionnalités
 
 ### 🏋️ Entraînement
-- Programme sur 6 jours : **J1 Push · J2 Pull · J3 Legs · J4 Repos · J5 Haut du corps · J6 Legs**, plus **Cardio** et **Abdos**
+- Programme sur 6 jours organisé par groupes musculaires :
+  - **J1 Push** : 2 exercices pectoraux · 2 épaules · 2 triceps + abdos
+  - **J2 Pull** : dos · trapèzes · biceps + cardio
+  - **J3 Legs** : jambes + abdos
+  - **J4 Repos actif** : marche, étirements
+  - **J5 Haut du corps** : 2 pectoraux · 2 dos · 2 épaules · 1 triceps · 1 biceps + abdos
+  - **J6 Legs** : chaîne postérieure + cardio
+  - Onglets **Cardio +** et **Abdos +** pour en faire davantage
 - Chaque exercice a un objectif (séries × répétitions) et affiche la dernière performance
 - Saisir séries / reps / poids et appuyer sur **Terminer ✓** → notification avec le résumé de ce qui a été fait
 - Bouton **Terminer la séance** → notification récap (exercices, volume total, minutes de cardio)

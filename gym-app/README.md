@@ -6,7 +6,13 @@ Application web personnelle pour suivre le programme d'entraînement, la nutriti
 
 **Option 1 — Sur le téléphone / ordinateur :** télécharger `index.html` et l'ouvrir dans le navigateur (Chrome, Safari...). Ajouter à l'écran d'accueil pour l'utiliser comme une appli.
 
-**Option 2 — GitHub Pages :** activer GitHub Pages dans les paramètres du dépôt (Settings → Pages → branche `main`), puis ouvrir `https://elrey97.github.io/Elrey97/gym-app/`.
+**Option 2 — GitHub Pages (recommandé) :** activer GitHub Pages dans les paramètres du dépôt (Settings → Pages → branche `main`), puis ouvrir `https://elrey97.github.io/Elrey97/gym-app/`.
+
+**Installer comme une vraie application (PWA) :** en ouvrant l'adresse GitHub Pages sur le téléphone :
+- **Android (Chrome)** : menu ⋮ → « Installer l'application » (ou « Ajouter à l'écran d'accueil »)
+- **iPhone (Safari)** : bouton Partager → « Sur l'écran d'accueil »
+
+L'application s'ouvre alors en plein écran avec sa propre icône 💪, et fonctionne **hors ligne** grâce au service worker.
 
 > ⚠️ Les données sont stockées dans le navigateur utilisé. Utiliser toujours le même navigateur pour garder l'historique.
 

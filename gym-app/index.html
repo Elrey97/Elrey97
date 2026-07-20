@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2a78d6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mon Gym">
 <title>Mon Gym — Suivi d'entraînement</title>
 <style>
   :root {
@@ -949,6 +955,11 @@ document.querySelectorAll("nav.tabs button").forEach(b => {
 });
 document.getElementById("exoSelect").onchange = function () { this.dataset.userPicked = "1"; renderChart(); };
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderChart);
+
+/* ─────────────── PWA (installation comme vraie application) ─────────────── */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
 
 /* ─────────────── INIT ─────────────── */
 (function init() {

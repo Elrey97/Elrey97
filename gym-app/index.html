@@ -198,6 +198,20 @@
     padding: 9px; border: 1px solid var(--border); border-radius: 8px;
     background: var(--page); color: var(--text-primary); font-family: inherit; font-size: 0.9rem;
   }
+  .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .photo-grid figure { position: relative; margin: 0; }
+  .photo-grid img { width: 100%; border-radius: 10px; display: block; aspect-ratio: 3/4; object-fit: cover; cursor: pointer; }
+  .photo-grid figcaption { font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: 3px; }
+  .photo-grid .pdel {
+    position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.55); color: #fff;
+    border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 0.7rem;
+  }
+  .photo-view {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+    align-items: center; justify-content: center; z-index: 70; padding: 16px; cursor: pointer;
+  }
+  .photo-view.open { display: flex; }
+  .photo-view img { max-width: 100%; max-height: 92vh; border-radius: 12px; }
   .scan-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
     align-items: center; justify-content: center; z-index: 60; padding: 16px;
@@ -256,9 +270,10 @@
 </head>
 <body>
 
-<header>
+<header style="position:relative">
   <h1>💪 Mon Gym</h1>
   <div class="sub" id="todayLine"></div>
+  <button class="btn small secondary" id="langBtn" style="position:absolute;right:16px;top:14px">🌐 RU</button>
 </header>
 
 <main>
@@ -348,6 +363,16 @@
         <button class="btn" id="mAdd">Enregistrer</button>
       </div>
       <div id="mList" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <div class="flexhead">
+        <h2>📸 Photos de progression</h2>
+        <button class="btn small" id="photoAdd">＋ Photo</button>
+      </div>
+      <input type="file" id="photoFile" accept="image/*" capture="environment" style="display:none">
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="hint">Une photo par mois, même pose, même lumière. Stockées uniquement sur cet appareil (non incluses dans l'export).</div>
     </div>
 
     <div class="card">
@@ -462,6 +487,8 @@
   <button data-tab="tab-grocery"><span class="ico">🛒</span>Courses</button>
   <button data-tab="tab-recipes"><span class="ico">👨‍🍳</span>Recettes</button>
 </nav>
+
+<div class="photo-view" id="photoView"><img id="photoViewImg" alt="Photo de progression"></div>
 
 <div class="scan-overlay" id="scanOverlay">
   <div class="scan-box">
@@ -694,6 +721,88 @@ const RECIPES = [
     steps: ["Écraser légèrement le tvorog à la fourchette.", "Ajouter les fruits rouges et la cannelle.", "Sucrer très légèrement au miel si besoin.", "Collation parfaite du soir : rassasiante et légère."] },
 ];
 
+/* ─────────────── LANGUE FR / RU ─────────────── */
+const RU_EXO = {
+  "Développé couché barre": "Жим штанги лёжа", "Développé incliné haltères": "Жим гантелей на наклонной скамье",
+  "Développé militaire": "Армейский жим", "Élévations latérales": "Махи гантелями в стороны",
+  "Dips": "Отжимания на брусьях", "Extensions triceps poulie": "Разгибания на трицепс в блоке",
+  "Crunch": "Скручивания", "Planche": "Планка", "Tractions": "Подтягивания",
+  "Rowing barre": "Тяга штанги в наклоне", "Tirage vertical poulie": "Тяга верхнего блока",
+  "Shrugs haltères": "Шраги с гантелями", "Face pull": "Тяга к лицу (face pull)",
+  "Curl biceps barre": "Подъём штанги на бицепс", "Curl marteau": "Молотки",
+  "Squat barre": "Приседания со штангой", "Presse à cuisses": "Жим ногами",
+  "Fentes marchées": "Выпады шагами", "Leg curl allongé": "Сгибания ног лёжа",
+  "Extensions de jambes": "Разгибания ног", "Mollets debout": "Подъёмы на носки стоя",
+  "Relevés de jambes suspendu": "Подъёмы ног в висе", "Russian twist": "Русские скручивания",
+  "Marche": "Ходьба", "Étirements": "Растяжка", "Développé couché haltères": "Жим гантелей лёжа",
+  "Écartés poulie": "Сведения в кроссовере", "Tractions prise large": "Подтягивания широким хватом",
+  "Rowing poulie basse": "Тяга нижнего блока", "Développé épaules haltères": "Жим гантелей сидя",
+  "Oiseau (élévations buste penché)": "Махи в наклоне", "Barre au front": "Французский жим",
+  "Curl incliné": "Подъём на бицепс на наклонной скамье", "Mountain climbers": "Скалолаз",
+  "Planche latérale": "Боковая планка", "Soulevé de terre roumain": "Румынская тяга",
+  "Hip thrust": "Ягодичный мост со штангой", "Squat bulgare": "Болгарские выпады",
+  "Leg curl assis": "Сгибания ног сидя", "Abducteurs machine": "Разведения ног в тренажёре",
+  "Mollets assis": "Подъёмы на носки сидя", "Tapis de course": "Беговая дорожка",
+  "Vélo / elliptique": "Велотренажёр / эллипс", "Tapis de course (long)": "Беговая дорожка (долго)",
+  "Corde à sauter": "Скакалка", "HIIT sprints": "ВИИТ спринты", "Marche inclinée": "Ходьба в гору",
+  "Crunch câble": "Скручивания в блоке", "Relevés de genoux": "Подъёмы коленей",
+  "Gainage dynamique": "Динамическая планка", "Roulette abdos (ab wheel)": "Ролик для пресса",
+};
+const RU_GRP = {
+  "Pectoraux": "Грудь", "Épaules": "Плечи", "Triceps": "Трицепс", "Abdos": "Пресс",
+  "Dos": "Спина", "Trapèzes": "Трапеции", "Biceps": "Бицепс", "Cardio": "Кардио",
+  "Jambes": "Ноги", "Mollets": "Икры", "Cardio léger": "Лёгкое кардио",
+  "Récupération": "Восстановление", "Mes exercices": "Мои упражнения", "Autre": "Другое",
+};
+const RU_TITLE = {
+  j1: "День 1 — Push (грудь, плечи, трицепс)", j2: "День 2 — Pull (спина, бицепс, трапеции)",
+  j3: "День 3 — Ноги", j4: "День 4 — Активный отдых", j5: "День 5 — Верх тела",
+  j6: "День 6 — Ноги (задняя цепь)", cardio: "Кардио дополнительно (по желанию)", abdos: "Пресс дополнительно (по желанию)",
+};
+const RU_STR = {
+  "Entraînement": "Тренировка", "Évolution": "Прогресс", "Repas": "Питание", "Courses": "Покупки", "Recettes": "Рецепты",
+  "⚖️ Poids corporel": "⚖️ Вес тела", "📏 Mensurations (cm)": "📏 Замеры (см)", "💾 Mes données": "💾 Мои данные",
+  "📒 Historique récent": "📒 История", "📅 Calendrier du mois": "📅 Календарь месяца",
+  "🧭 Volume par muscle (30 derniers jours)": "🧭 Объём по мышцам (30 дней)",
+  "📊 Cette semaine vs la précédente": "📊 Эта неделя vs прошлая", "📸 Photos de progression": "📸 Фото прогресса",
+  "🎯 Mes besoins (calories & protéines)": "🎯 Мои нормы (калории и БЖУ)", "📒 Journal du jour": "📒 Дневник дня",
+  "🍽️ Programme alimentaire de la semaine": "🍽️ Меню на неделю", "🛒 Courses du mois": "🛒 Покупки на месяц",
+  "👨‍🍳 Recettes": "👨‍🍳 Рецепты", "⏰ Rappel d'entraînement": "⏰ Напоминание о тренировке",
+  "Enregistrer": "Сохранить", "Fixer l'objectif": "Задать цель", "Exporter (sauvegarde)": "Экспорт (копия)",
+  "Importer": "Импорт", "＋ Photo": "＋ Фото", "Calculer": "Рассчитать", "📷 Scanner": "📷 Сканер",
+  "Ajouter": "Добавить", "Nouveau mois": "Новый месяц", "Démarrer": "Старт", "Arrêter": "Стоп", "Fermer": "Закрыть",
+  "Démarrer automatiquement après chaque exercice": "Автостарт после каждого подхода",
+  "Homme": "Мужчина", "Femme": "Женщина", "Peu actif (hors sport)": "Малоактивный",
+  "Modérément actif": "Умеренно активный", "Très actif": "Очень активный",
+  "🍃 Sèche (perte)": "🍃 Сушка", "⚖️ Maintien": "⚖️ Поддержание", "💪 Prise de masse": "💪 Набор массы",
+  "Toutes": "Все", "💧 Eau :": "💧 Вода :",
+  "Aliment...": "Продукт...", "Objectif kg": "Цель, кг", "Âge": "Возраст", "Taille cm": "Рост, см",
+  "Poids kg": "Вес, кг", "Bras": "Рука", "Poitrine": "Грудь", "Taille": "Талия", "Cuisse": "Бедро",
+  "Ajouter un article...": "Добавить товар...", "Ajouter un exercice...": "Добавить упражнение...", "Qté": "Кол-во",
+};
+function isRu() { return settings.lang === "ru"; }
+function L(fr, ru) { return isRu() ? ru : fr; }
+function exName(n) { return isRu() ? (RU_EXO[n] || n) : n; }
+function grpName(g) { return isRu() ? (RU_GRP[g] || g) : g; }
+function dayLabel(d) {
+  if (!isRu()) return d.label;
+  return d.label.replace(/^J(\d)/, "Д$1").replace("Repos", "Отдых").replace("Haut du corps", "Верх тела")
+    .replace("Cardio +", "Кардио +").replace("Abdos +", "Пресс +");
+}
+function dayTitle(d) { return isRu() ? (RU_TITLE[d.id] || d.title) : d.title; }
+function translateStatic() {
+  if (!isRu()) return;
+  document.querySelectorAll("h1, h2, button, label, option, span, summary").forEach(el => {
+    el.childNodes.forEach(node => {
+      if (node.nodeType === 3) {
+        const t = node.textContent.trim();
+        if (RU_STR[t]) node.textContent = node.textContent.replace(t, RU_STR[t]);
+      }
+    });
+  });
+  document.querySelectorAll("input[placeholder]").forEach(i => { if (RU_STR[i.placeholder]) i.placeholder = RU_STR[i.placeholder]; });
+}
+
 /* ─────────────── ÉTAT / STOCKAGE ─────────────── */
 const store = {
   load(key, fallback) {
@@ -751,7 +860,7 @@ function renderDayPicker() {
   dp.innerHTML = "";
   PROGRAM.forEach(d => {
     const b = document.createElement("button");
-    b.textContent = d.label;
+    b.textContent = dayLabel(d);
     if (d.id === currentDay) b.classList.add("active");
     b.onclick = () => { currentDay = d.id; store.save("currentDay", currentDay); renderDayPicker(); renderDay(); };
     dp.appendChild(b);
@@ -773,13 +882,26 @@ function renderDay() {
 
   const card = document.createElement("div");
   card.className = "card";
-  card.innerHTML = `<h2>${day.title}</h2>`;
+  card.innerHTML = `<h2>${dayTitle(day)}</h2>`;
 
   if (day.rest) {
     card.innerHTML += `<div class="cardio-note">😌 Aujourd'hui c'est repos actif ! Bonne hydratation, bon sommeil — et si tu veux bouger un peu, la marche et les étirements ci-dessous suffisent.</div>`;
   }
   if (day.cardio) {
     card.innerHTML += `<div class="cardio-note">🏃 Cardio en plus du programme : choisis 1 exercice par session et note la durée en minutes.</div>`;
+  }
+  if (!day.rest && !day.cardio && day.id !== "abdos") {
+    card.innerHTML += `
+    <details class="warmup" style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-size:0.88rem;font-weight:600">🔥 ${L("Échauffement (5 min) — avant de commencer", "Разминка (5 мин) — перед началом")}</summary>
+      <ul style="padding-left:20px;font-size:0.85rem;color:var(--text-secondary);margin:6px 0">
+        <li>2-3 min de cardio léger (vélo, tapis, corde)</li>
+        <li>Rotations d'épaules et de bras × 15</li>
+        <li>Rotations de bassin et de hanches × 10</li>
+        <li>10 squats au poids du corps + 10 pompes légères</li>
+        <li>Puis les séries d'échauffement de ton 1er exercice (voir ℹ️)</li>
+      </ul>
+    </details>`;
   }
 
   const allExos = day.exos.concat(customExos[day.id] || []);
@@ -789,7 +911,7 @@ function renderDay() {
     if (grp && grp !== lastGroup) {
       const h = document.createElement("div");
       h.className = "muscle-label";
-      h.textContent = grp;
+      h.textContent = grpName(grp);
       card.appendChild(h);
     }
     lastGroup = grp;
@@ -801,34 +923,40 @@ function renderDay() {
     let lastTxt = "", sugg = "";
     if (last) {
       lastTxt = isCardio
-        ? ` · Dernière fois : ${last.minutes || "?"} min`
-        : ` · Dernière fois : ${last.sets}×${last.reps} @ ${last.weight} kg`;
+        ? ` · ${L("Dernière fois", "Прошлый раз")} : ${last.minutes || "?"} min`
+        : ` · ${L("Dernière fois", "Прошлый раз")} : ${last.sets}×${last.reps} @ ${last.weight} kg`;
       if (!isCardio && last.weight) {
         const up = upperTarget(e.t);
-        if (up && last.reps >= up) sugg = ` · 💡 Essaie ${+(last.weight + 2.5).toFixed(1)} kg`;
+        if (up && last.reps >= up) sugg = ` · 💡 ${L("Essaie", "Попробуй")} ${+(last.weight + 2.5).toFixed(1)} kg`;
       }
+    }
+    // séries d'échauffement calculées à partir de la dernière charge de travail
+    let warmup = "";
+    if (!isCardio && last && last.weight >= 30) {
+      const r = pct => Math.round(last.weight * pct / 2.5) * 2.5;
+      warmup = `<br>🔥 ${L("Échauffement", "Разминочные подходы")} : ${L("barre à vide", "пустой гриф")} × 10 → ${r(0.4)} kg × 8 → ${r(0.6)} kg × 5 → ${r(0.8)} kg × 3`;
     }
     const pend = isCardio || isDone ? [] : pendingSets(day.id, e.n);
     div.innerHTML = `
       <div class="exo-head">
         <div>
-          <div class="name">${e.n} ${e.tip ? '<button class="tipbtn" title="Technique">ℹ️</button>' : ""}</div>
-          <div class="target">Objectif : ${e.t}${lastTxt}${sugg}</div>
+          <div class="name">${exName(e.n)} ${e.tip ? '<button class="tipbtn" title="Technique">ℹ️</button>' : ""}</div>
+          <div class="target">${L("Objectif", "Цель")} : ${e.t}${lastTxt}${sugg}</div>
         </div>
-        ${isDone ? '<span class="donebadge">✓ Fait</span>' : ""}
+        ${isDone ? '<span class="donebadge">✓ ' + L("Fait", "Готово") + '</span>' : ""}
       </div>
-      ${e.tip ? `<div class="hint tipbox" style="display:none">🎓 ${e.tip}</div>` : ""}
+      ${e.tip ? `<div class="hint tipbox" style="display:none">🎓 ${e.tip}${warmup}</div>` : ""}
       ${isDone ? "" : isCardio ? `
       <div class="inputs">
         <div><label>Minutes</label><input type="number" class="i-min" min="1" placeholder="30"></div>
-        <button class="btn small b-done">Terminer ✓</button>
+        <button class="btn small b-done">${L("Terminer ✓", "Готово ✓")}</button>
       </div>` : `
       ${pend.length ? `<div class="setchips">${pend.map((s, i) => `<span class="chip">S${i + 1} · ${s.r} × ${s.w} kg</span>`).join("")}</div>` : ""}
       <div class="inputs">
         <div><label>Reps</label><input type="number" class="i-reps" min="1" placeholder="10"></div>
-        <div><label>Poids (kg)</label><input type="number" class="i-w" min="0" step="0.5" placeholder="${last ? last.weight : "kg"}"></div>
-        <button class="btn small b-set">+ Série</button>
-        <button class="btn small secondary b-done">Terminer ✓</button>
+        <div><label>${L("Poids (kg)", "Вес (кг)")}</label><input type="number" class="i-w" min="0" step="0.5" placeholder="${last ? last.weight : "kg"}"></div>
+        <button class="btn small b-set">${L("+ Série", "+ Подход")}</button>
+        <button class="btn small secondary b-done">${L("Terminer ✓", "Готово ✓")}</button>
       </div>`}
     `;
     const tipBtn = div.querySelector(".tipbtn");
@@ -840,7 +968,7 @@ function renderDay() {
       div.querySelector(".b-done").onclick = () => {
         const min = parseFloat(div.querySelector(".i-min").value);
         if (!min) { toast("Indique la durée en minutes 😉"); return; }
-        history.push({ date: todayISO(), dayId: day.id, exo: e.n, minutes: min, volume: 0 });
+        history.push({ date: todayISO(), dayId: day.id, exo: e.n, minutes: min, volume: 0, ts: Date.now() });
         store.save("history", history);
         notify("Exercice terminé 🏃", `${e.n} — ${min} min. Bien joué !`);
         renderDay(); renderProgress();
@@ -865,7 +993,7 @@ function renderDay() {
         const bestReps = Math.max(...pend.map(s => s.r));
         const volume = pend.reduce((sum, s) => sum + s.r * s.w, 0);
         const prevBest = bestWeightBefore(e.n);
-        history.push({ date: todayISO(), dayId: day.id, exo: e.n, setsList: pend.slice(), sets: pend.length, reps: bestReps, weight: maxW, volume });
+        history.push({ date: todayISO(), dayId: day.id, exo: e.n, setsList: pend.slice(), sets: pend.length, reps: bestReps, weight: maxW, volume, ts: Date.now() });
         store.save("history", history);
         clearPending(day.id, e.n);
         if (maxW > prevBest && prevBest > 0) {
@@ -898,14 +1026,16 @@ function renderDay() {
   const finish = document.createElement("button");
   finish.className = "btn";
   finish.style.cssText = "width:100%;margin-top:12px;padding:13px";
-  finish.textContent = `🏁 Terminer la séance (${doneCount}/${allExos.length} exercices)`;
+  finish.textContent = `🏁 ${L("Terminer la séance", "Завершить тренировку")} (${doneCount}/${allExos.length})`;
   finish.onclick = () => {
     const todays = history.filter(h => h.date === todayISO() && h.dayId === day.id);
     const vol = todays.reduce((s, h) => s + (h.volume || 0), 0);
     const mins = todays.reduce((s, h) => s + (h.minutes || 0), 0);
-    let msg = `${day.title} : ${todays.length} exercice(s) terminé(s)`;
+    let msg = `${dayTitle(day)} : ${todays.length} exercice(s) terminé(s)`;
     if (vol) msg += `, volume total ${Math.round(vol)} kg`;
     if (mins) msg += `, ${mins} min de cardio`;
+    const dur = sessionDuration(todays);
+    if (dur) msg += `, ⏳ bouclée en ${dur}`;
     msg += ". Excellent travail ! 🎉";
     notify("Séance terminée 🎉", msg);
   };
@@ -915,7 +1045,7 @@ function renderDay() {
   const share = document.createElement("button");
   share.className = "btn secondary";
   share.style.cssText = "width:100%;margin-top:8px;padding:12px";
-  share.textContent = "📤 Partager la séance";
+  share.textContent = L("📤 Partager la séance", "📤 Поделиться тренировкой");
   share.onclick = () => {
     const todays = history.filter(h => h.date === todayISO() && h.dayId === day.id);
     if (!todays.length) { toast("Termine d'abord un exercice 😉"); return; }
@@ -924,17 +1054,27 @@ function renderDay() {
       const det = h.minutes !== undefined ? `${h.minutes} min`
         : h.setsList ? h.setsList.map(s => `${s.r}×${s.w}`).join(" · ") + " kg"
         : `${h.sets}×${h.reps} @ ${h.weight} kg`;
-      return `• ${h.exo} : ${det}`;
+      return `• ${exName(h.exo)} : ${det}`;
     });
-    let text = `💪 Ma séance — ${day.title}\n${lines.join("\n")}`;
+    let text = `💪 ${L("Ma séance", "Моя тренировка")} — ${dayTitle(day)}\n${lines.join("\n")}`;
     if (vol) text += `\nVolume total : ${Math.round(vol)} kg`;
-    text += "\n— via Mon Gym";
+    const dur = sessionDuration(todays);
+    if (dur) text += ` · ⏳ ${dur}`;
+    text += "\n— via Mon Gym 💪";
     if (navigator.share) navigator.share({ text }).catch(() => {});
     else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast("Résumé copié — colle-le où tu veux 📋"));
   };
   card.appendChild(share);
   c.appendChild(card);
   renderDeload();
+}
+
+function sessionDuration(entries) {
+  const times = entries.map(h => h.ts).filter(Boolean);
+  if (times.length < 2) return null;
+  const mins = Math.round((Math.max(...times) - Math.min(...times)) / 60000);
+  if (mins < 5) return null;
+  return mins >= 60 ? `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, "0")}` : `${mins} min`;
 }
 
 /* ─────────────── SEMAINE DE DÉCHARGE (DELOAD) ─────────────── */
@@ -982,7 +1122,7 @@ function fillExoSelect() {
   const names = allExerciseNames().sort((a, b) => (withData.has(b) ? 1 : 0) - (withData.has(a) ? 1 : 0) || a.localeCompare(b, "fr"));
   names.forEach(n => {
     const o = document.createElement("option");
-    o.value = n; o.textContent = (withData.has(n) ? "● " : "") + n;
+    o.value = n; o.textContent = (withData.has(n) ? "● " : "") + exName(n);
     sel.appendChild(o);
   });
   // Garde la sélection de l'utilisateur ; sinon, montre par défaut un exercice qui a des données
@@ -1016,7 +1156,7 @@ function renderChart() {
     surf: css.getPropertyValue("--surface-1").trim(),
   };
   svg.innerHTML = "";
-  document.getElementById("chartTitle").textContent = "Progression — " + (exo || "charge (kg)");
+  document.getElementById("chartTitle").textContent = L("Progression", "Прогресс") + " — " + (exName(exo) || "kg");
 
   // 1RM estimé (formule d'Epley) sur la meilleure série jamais enregistrée
   let best1 = 0;
@@ -1118,14 +1258,24 @@ function renderProgress() {
     `<div class="histline"><b>${b.kg} kg</b> — ${fmtDate(b.date)}</div>`).join("") || `<div class="hint">Enregistre ton poids régulièrement (1×/semaine, le matin à jeun).</div>`;
   renderBwChart();
 
-  // history
+  // history (avec suppression des saisies erronées)
   const hl = document.getElementById("history");
-  hl.innerHTML = history.slice(-15).reverse().map(h => {
+  const start = Math.max(0, history.length - 15);
+  hl.innerHTML = history.slice(-15).reverse().map((h, i) => {
+    const idx = history.length - 1 - i;
     const detail = h.minutes !== undefined ? `${h.minutes} min`
       : h.setsList ? h.setsList.map(s => `${s.r}×${s.w}`).join(" · ") + " kg"
       : `${h.sets}×${h.reps} @ ${h.weight} kg`;
-    return `<div class="histline"><b>${h.exo}</b> — ${detail} · ${fmtDate(h.date)}</div>`;
+    return `<div class="histline"><button class="btn danger small hdel" data-idx="${idx}" style="padding:1px 8px;float:right">✕</button><b>${exName(h.exo)}</b> — ${detail} · ${fmtDate(h.date)}</div>`;
   }).join("") || `<div class="hint">Ton historique apparaîtra ici après ta première séance.</div>`;
+  hl.querySelectorAll(".hdel").forEach(b => b.onclick = () => {
+    const idx = +b.dataset.idx;
+    if (!confirm(`Supprimer « ${history[idx].exo} » du ${fmtDate(history[idx].date)} ?`)) return;
+    history.splice(idx, 1);
+    store.save("history", history);
+    renderDay(); renderProgress();
+    toast("Saisie supprimée ✓");
+  });
 
   renderCalendar();
   renderMuscleBars();
@@ -1293,19 +1443,30 @@ function renderCalendar() {
 }
 
 function showDayDetail(iso) {
-  const entries = history.filter(h => h.date === iso);
-  const dayIds = [...new Set(entries.map(h => h.dayId))];
-  const titles = dayIds.map(id => { const d = PROGRAM.find(p => p.id === id); return d ? d.title : id; }).join(" + ");
-  const vol = entries.reduce((s, h) => s + (h.volume || 0), 0);
-  document.getElementById("dayDetail").innerHTML =
-    `<h3 style="margin-top:12px">Séance du ${fmtDate(iso)} — ${titles}</h3>` +
-    entries.map(h => {
+  const entries = history.map((h, i) => ({ h, i })).filter(x => x.h.date === iso);
+  const dayIds = [...new Set(entries.map(x => x.h.dayId))];
+  const titles = dayIds.map(id => { const d = PROGRAM.find(p => p.id === id); return d ? dayTitle(d) : id; }).join(" + ");
+  const vol = entries.reduce((s, x) => s + (x.h.volume || 0), 0);
+  const dd = document.getElementById("dayDetail");
+  dd.innerHTML =
+    `<h3 style="margin-top:12px">${fmtDate(iso)} — ${titles}</h3>` +
+    entries.map(x => {
+      const h = x.h;
       const det = h.minutes !== undefined ? `${h.minutes} min`
         : h.setsList ? h.setsList.map(s => `${s.r}×${s.w} kg`).join(" · ")
         : `${h.sets}×${h.reps} @ ${h.weight} kg`;
-      return `<div class="histline"><b>${h.exo}</b> — ${det}</div>`;
+      return `<div class="histline"><button class="btn danger small ddel" data-idx="${x.i}" style="padding:1px 8px;float:right">✕</button><b>${exName(h.exo)}</b> — ${det}</div>`;
     }).join("") +
     (vol ? `<div class="hint">Volume total : ${Math.round(vol)} kg</div>` : "");
+  dd.querySelectorAll(".ddel").forEach(b => b.onclick = () => {
+    const idx = +b.dataset.idx;
+    if (!confirm(`Supprimer « ${history[idx].exo} » ?`)) return;
+    history.splice(idx, 1);
+    store.save("history", history);
+    renderDay(); renderProgress();
+    if (history.some(h => h.date === iso)) showDayDetail(iso); else dd.innerHTML = "";
+    toast("Saisie supprimée ✓");
+  });
 }
 
 /* ─────────────── VOLUME PAR MUSCLE & COMPARAISON ─────────────── */
@@ -1319,7 +1480,7 @@ function renderMuscleBars() {
   const entries = Object.entries(by).sort((a, b) => b[1] - a[1]);
   const max = entries.length ? entries[0][1] : 1;
   document.getElementById("muscleBars").innerHTML = entries.map(([g, v]) =>
-    `<div class="mbar-row"><span style="width:86px">${g}</span><div class="mbar"><i style="width:${Math.round(v / max * 100)}%"></i></div><span style="min-width:64px;text-align:right;font-variant-numeric:tabular-nums">${Math.round(v)} kg</span></div>`
+    `<div class="mbar-row"><span style="width:86px">${grpName(g)}</span><div class="mbar"><i style="width:${Math.round(v / max * 100)}%"></i></div><span style="min-width:64px;text-align:right;font-variant-numeric:tabular-nums">${Math.round(v)} kg</span></div>`
   ).join("") || `<div class="hint">La répartition par groupe musculaire apparaîtra après tes premières séances.</div>`;
 }
 
@@ -1424,6 +1585,64 @@ document.getElementById("mAdd").onclick = () => {
   MEASURE_FIELDS.forEach(([, , id]) => document.getElementById(id).value = "");
   renderMeasures();
   toast("Mensurations enregistrées 📏");
+};
+
+/* ─────────────── PHOTOS DE PROGRESSION (IndexedDB) ─────────────── */
+function photosDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("mongym", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("photos", { keyPath: "date" });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function photosAll() {
+  const db = await photosDB();
+  return new Promise(res => {
+    const q = db.transaction("photos").objectStore("photos").getAll();
+    q.onsuccess = () => res(q.result || []);
+    q.onerror = () => res([]);
+  });
+}
+async function renderPhotos() {
+  const grid = document.getElementById("photoGrid");
+  const photos = (await photosAll()).sort((a, b) => a.date.localeCompare(b.date));
+  grid.innerHTML = photos.map(p =>
+    `<figure><img src="${p.img}" data-date="${p.date}" alt="Photo du ${fmtDate(p.date)}"><button class="pdel" data-date="${p.date}">✕</button><figcaption>${fmtDate(p.date)}</figcaption></figure>`
+  ).join("");
+  grid.querySelectorAll("img").forEach(img => img.onclick = () => {
+    document.getElementById("photoViewImg").src = img.src;
+    document.getElementById("photoView").classList.add("open");
+  });
+  grid.querySelectorAll(".pdel").forEach(b => b.onclick = async () => {
+    if (!confirm("Supprimer cette photo ?")) return;
+    const db = await photosDB();
+    db.transaction("photos", "readwrite").objectStore("photos").delete(b.dataset.date);
+    setTimeout(renderPhotos, 150);
+  });
+}
+document.getElementById("photoView").onclick = () => document.getElementById("photoView").classList.remove("open");
+document.getElementById("photoAdd").onclick = () => document.getElementById("photoFile").click();
+document.getElementById("photoFile").onchange = ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = async () => {
+    const MAX = 900;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    const data = canvas.toDataURL("image/jpeg", 0.85);
+    const db = await photosDB();
+    db.transaction("photos", "readwrite").objectStore("photos").put({ date: todayISO(), img: data });
+    URL.revokeObjectURL(img.src);
+    setTimeout(renderPhotos, 150);
+    toast("Photo enregistrée 📸");
+  };
+  img.src = URL.createObjectURL(f);
+  ev.target.value = "";
 };
 
 /* ─────────────── EXPORT / IMPORT DES DONNÉES ─────────────── */
@@ -1762,12 +1981,21 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 
 /* ─────────────── INIT ─────────────── */
+document.getElementById("langBtn").textContent = "🌐 " + (store.load("settings", {}).lang === "ru" ? "FR" : "RU");
+document.getElementById("langBtn").onclick = () => {
+  settings.lang = isRu() ? "fr" : "ru";
+  saveSettings();
+  location.reload();
+};
+
 (function init() {
+  translateStatic();
   const d = new Date();
   const day = PROGRAM.find(p => p.id === suggestedDayId());
   document.getElementById("todayLine").textContent =
-    d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) +
-    " · Suggestion : " + day.label;
+    d.toLocaleDateString(isRu() ? "ru-RU" : "fr-FR", { weekday: "long", day: "numeric", month: "long" }) +
+    " · " + L("Suggestion", "Сегодня") + " : " + dayLabel(day);
+  renderPhotos();
   renderDayPicker();
   renderDay();
   renderProgress();

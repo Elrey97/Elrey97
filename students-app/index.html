@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<title>📚 Base de données Étudiants</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#4f46e5; --accent2:#6366f1;
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--txt); font-size:16px;
+    padding-bottom:90px;
+  }
+  header{
+    position:sticky; top:0; z-index:20;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    padding:16px; box-shadow:0 2px 12px rgba(0,0,0,.4);
+  }
+  header h1{margin:0; font-size:20px; display:flex; align-items:center; gap:8px}
+  header .sub{margin:4px 0 0; font-size:13px; opacity:.9}
+  .wrap{max-width:900px; margin:0 auto; padding:16px}
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+  input,select,button,textarea{font-family:inherit; font-size:15px}
+  .search{
+    flex:1 1 200px; min-width:0; padding:11px 14px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--card); color:var(--txt);
+  }
+  .search::placeholder{color:var(--muted)}
+  select.filter{
+    padding:11px 12px; border-radius:var(--radius); border:1px solid var(--line);
+    background:var(--card); color:var(--txt);
+  }
+  .btn{
+    padding:11px 16px; border-radius:var(--radius); border:none; cursor:pointer;
+    background:var(--accent); color:#fff; font-weight:600; transition:.15s;
+  }
+  .btn:active{transform:scale(.96)}
+  .btn.ghost{background:var(--card2); color:var(--txt); border:1px solid var(--line)}
+  .btn.sm{padding:7px 11px; font-size:13px}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; text-align:center}
+  .stat b{display:block; font-size:24px; color:var(--accent2)}
+  .stat span{font-size:12px; color:var(--muted)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:10px; display:flex; gap:12px; align-items:center;
+  }
+  .avatar{
+    width:46px; height:46px; border-radius:50%; flex:0 0 46px;
+    display:flex; align-items:center; justify-content:center; font-weight:700;
+    color:#fff; font-size:17px;
+  }
+  .info{flex:1; min-width:0}
+  .info .name{font-weight:600; font-size:16px}
+  .info .meta{font-size:13px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:600; margin-right:6px}
+  .actions{display:flex; gap:6px; flex:0 0 auto}
+  .icon-btn{
+    background:var(--card2); border:1px solid var(--line); color:var(--txt);
+    width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:15px;
+  }
+  .empty{text-align:center; color:var(--muted); padding:40px 20px}
+  .fab{
+    position:fixed; bottom:20px; right:20px; z-index:30;
+    width:60px; height:60px; border-radius:50%; border:none;
+    background:var(--accent); color:#fff; font-size:30px; cursor:pointer;
+    box-shadow:0 4px 16px rgba(79,70,229,.6);
+  }
+  .fab:active{transform:scale(.92)}
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:40;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    background:var(--card); width:100%; max-width:900px; border-radius:18px 18px 0 0;
+    padding:20px; max-height:92vh; overflow-y:auto;
+    animation:slideUp .22s ease;
+  }
+  @media(min-width:600px){
+    .overlay{align-items:center}
+    .modal{border-radius:18px}
+  }
+  @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .modal h2{margin:0 0 16px; font-size:19px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:13px; color:var(--muted); margin-bottom:5px}
+  .field input,.field select,.field textarea{
+    width:100%; padding:11px 13px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card2); color:var(--txt);
+  }
+  .field textarea{min-height:70px; resize:vertical}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .modal-actions{display:flex; gap:10px; margin-top:8px}
+  .modal-actions .btn{flex:1}
+  .menu{position:relative}
+  .menu-list{
+    position:absolute; right:0; top:110%; background:var(--card2);
+    border:1px solid var(--line); border-radius:12px; padding:6px; min-width:180px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5); display:none; z-index:25;
+  }
+  .menu-list.show{display:block}
+  .menu-list button{
+    display:block; width:100%; text-align:left; background:none; border:none;
+    color:var(--txt); padding:9px 12px; border-radius:8px; cursor:pointer; font-size:14px;
+  }
+  .menu-list button:active{background:var(--card)}
+  .toast{
+    position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+    background:var(--card2); border:1px solid var(--line); color:var(--txt);
+    padding:12px 20px; border-radius:12px; z-index:60; font-size:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,.5); opacity:0; transition:.25s; pointer-events:none;
+  }
+  .toast.show{opacity:1; bottom:110px}
+  .sort-hint{font-size:12px; color:var(--muted); margin-bottom:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+      <div>
+        <h1>📚 Base de données Étudiants</h1>
+        <p class="sub">Gestion locale · fonctionne hors ligne</p>
+      </div>
+      <div class="menu">
+        <button class="icon-btn" style="background:rgba(255,255,255,.2);border-color:transparent" onclick="toggleMenu(event)">⋮</button>
+        <div class="menu-list" id="menu">
+          <button onclick="exportJSON()">⬇️ Exporter (JSON)</button>
+          <button onclick="importJSON()">⬆️ Importer (JSON)</button>
+          <button onclick="exportCSV()">📄 Exporter (CSV)</button>
+          <button onclick="seedDemo()">✨ Données de démo</button>
+          <button onclick="clearAll()" style="color:var(--bad)">🗑️ Tout effacer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b id="statTotal">0</b><span>Étudiants</span></div>
+    <div class="stat"><b id="statAvg">—</b><span>Moyenne générale</span></div>
+    <div class="stat"><b id="statClasses">0</b><span>Classes</span></div>
+  </div>
+
+  <div class="toolbar">
+    <input class="search" id="search" placeholder="🔍 Rechercher (nom, email, classe...)" oninput="render()">
+    <select class="filter" id="filterClass" onchange="render()"><option value="">Toutes les classes</option></select>
+    <select class="filter" id="sortBy" onchange="render()">
+      <option value="name">Trier : Nom</option>
+      <option value="grade">Trier : Moyenne</option>
+      <option value="class">Trier : Classe</option>
+      <option value="age">Trier : Âge</option>
+    </select>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<button class="fab" onclick="openForm()">＋</button>
+
+<!-- Form modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeForm()">
+  <div class="modal">
+    <h2 id="formTitle">Nouvel étudiant</h2>
+    <input type="hidden" id="editId">
+    <div class="row2">
+      <div class="field"><label>Prénom *</label><input id="fFirst" placeholder="Prénom"></div>
+      <div class="field"><label>Nom *</label><input id="fLast" placeholder="Nom"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Classe</label><input id="fClass" placeholder="ex : 3ème A" list="classList"><datalist id="classList"></datalist></div>
+      <div class="field"><label>Âge</label><input id="fAge" type="number" min="1" max="120" placeholder="Âge"></div>
+    </div>
+    <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="etudiant@email.com"></div>
+    <div class="row2">
+      <div class="field"><label>Téléphone</label><input id="fPhone" placeholder="Téléphone"></div>
+      <div class="field"><label>Moyenne / 20</label><input id="fGrade" type="number" min="0" max="20" step="0.1" placeholder="ex : 14.5"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Remarques..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeForm()">Annuler</button>
+      <button class="btn" onclick="saveStudent()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="application/json" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'students_db_v1';
+let students = load();
+
+function load(){
+  try{ return JSON.parse(localStorage.getItem(KEY)) || []; }
+  catch(e){ return []; }
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(students)); }
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function colorFor(str){
+  let h=0; for(let i=0;i<str.length;i++) h = str.charCodeAt(i) + ((h<<5)-h);
+  return `hsl(${Math.abs(h)%360},55%,45%)`;
+}
+function initials(f,l){ return ((f[0]||'')+(l[0]||'')).toUpperCase() || '?'; }
+function gradeColor(g){
+  if(g==null||g==='') return 'var(--muted)';
+  g = parseFloat(g);
+  if(g>=16) return 'var(--ok)';
+  if(g>=10) return 'var(--warn)';
+  return 'var(--bad)';
+}
+
+/* ---------- Form ---------- */
+function openForm(student){
+  document.getElementById('formTitle').textContent = student ? 'Modifier l\'étudiant' : 'Nouvel étudiant';
+  document.getElementById('editId').value = student ? student.id : '';
+  document.getElementById('fFirst').value = student?.first || '';
+  document.getElementById('fLast').value = student?.last || '';
+  document.getElementById('fClass').value = student?.klass || '';
+  document.getElementById('fAge').value = student?.age || '';
+  document.getElementById('fEmail').value = student?.email || '';
+  document.getElementById('fPhone').value = student?.phone || '';
+  document.getElementById('fGrade').value = student?.grade ?? '';
+  document.getElementById('fNotes').value = student?.notes || '';
+  refreshClassDatalist();
+  document.getElementById('overlay').classList.add('show');
+}
+function closeForm(){ document.getElementById('overlay').classList.remove('show'); }
+
+function saveStudent(){
+  const first = document.getElementById('fFirst').value.trim();
+  const last  = document.getElementById('fLast').value.trim();
+  if(!first || !last){ toast('Prénom et nom obligatoires'); return; }
+  const id = document.getElementById('editId').value;
+  const data = {
+    first, last,
+    klass: document.getElementById('fClass').value.trim(),
+    age: document.getElementById('fAge').value.trim(),
+    email: document.getElementById('fEmail').value.trim(),
+    phone: document.getElementById('fPhone').value.trim(),
+    grade: document.getElementById('fGrade').value.trim(),
+    notes: document.getElementById('fNotes').value.trim(),
+  };
+  if(id){
+    const s = students.find(x=>x.id===id);
+    Object.assign(s, data);
+    toast('Étudiant modifié ✓');
+  } else {
+    students.push({ id: uid(), ...data });
+    toast('Étudiant ajouté ✓');
+  }
+  save(); closeForm(); render();
+}
+
+function editStudent(id){ openForm(students.find(x=>x.id===id)); }
+function deleteStudent(id){
+  const s = students.find(x=>x.id===id);
+  if(confirm(`Supprimer ${s.first} ${s.last} ?`)){
+    students = students.filter(x=>x.id!==id);
+    save(); render(); toast('Supprimé');
+  }
+}
+
+/* ---------- Render ---------- */
+function render(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const fc = document.getElementById('filterClass').value;
+  const sort = document.getElementById('sortBy').value;
+
+  let list = students.filter(s=>{
+    if(fc && s.klass !== fc) return false;
+    if(!q) return true;
+    return [s.first,s.last,s.klass,s.email,s.phone,s.notes]
+      .some(v => (v||'').toLowerCase().includes(q));
+  });
+
+  list.sort((a,b)=>{
+    if(sort==='grade') return (parseFloat(b.grade)||-1) - (parseFloat(a.grade)||-1);
+    if(sort==='age') return (parseInt(a.age)||999) - (parseInt(b.age)||999);
+    if(sort==='class') return (a.klass||'').localeCompare(b.klass||'');
+    return (a.last||'').localeCompare(b.last||'') || (a.first||'').localeCompare(b.first||'');
+  });
+
+  const el = document.getElementById('list');
+  if(list.length===0){
+    el.innerHTML = students.length===0
+      ? `<div class="empty"><p style="font-size:40px;margin:0">📋</p><p>Aucun étudiant.<br>Appuie sur <b>＋</b> pour en ajouter un,<br>ou charge les <a href="#" onclick="seedDemo();return false" style="color:var(--accent2)">données de démo</a>.</p></div>`
+      : `<div class="empty">Aucun résultat pour cette recherche.</div>`;
+  } else {
+    el.innerHTML = list.map(s=>{
+      const name = `${s.first} ${s.last}`;
+      const meta = [s.klass && `🎓 ${s.klass}`, s.age && `${s.age} ans`, s.email].filter(Boolean).join(' · ');
+      const gc = gradeColor(s.grade);
+      const gradeBadge = (s.grade!=='' && s.grade!=null)
+        ? `<span class="badge" style="background:${gc}22;color:${gc}">${s.grade}/20</span>` : '';
+      return `<div class="card">
+        <div class="avatar" style="background:${colorFor(name)}">${initials(s.first,s.last)}</div>
+        <div class="info">
+          <div class="name">${esc(name)} ${gradeBadge}</div>
+          <div class="meta">${esc(meta) || '—'}</div>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" onclick="editStudent('${s.id}')">✏️</button>
+          <button class="icon-btn" onclick="deleteStudent('${s.id}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  updateStats();
+  refreshClassFilter();
+  refreshClassDatalist();
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function updateStats(){
+  document.getElementById('statTotal').textContent = students.length;
+  const grades = students.map(s=>parseFloat(s.grade)).filter(g=>!isNaN(g));
+  document.getElementById('statAvg').textContent = grades.length
+    ? (grades.reduce((a,b)=>a+b,0)/grades.length).toFixed(1) : '—';
+  const classes = new Set(students.map(s=>s.klass).filter(Boolean));
+  document.getElementById('statClasses').textContent = classes.size;
+}
+
+function refreshClassFilter(){
+  const sel = document.getElementById('filterClass');
+  const cur = sel.value;
+  const classes = [...new Set(students.map(s=>s.klass).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Toutes les classes</option>' +
+    classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.value = classes.includes(cur) ? cur : '';
+}
+function refreshClassDatalist(){
+  const dl = document.getElementById('classList');
+  const classes = [...new Set(students.map(s=>s.klass).filter(Boolean))].sort();
+  dl.innerHTML = classes.map(c=>`<option value="${esc(c)}">`).join('');
+}
+
+/* ---------- Menu ---------- */
+function toggleMenu(e){ e.stopPropagation(); document.getElementById('menu').classList.toggle('show'); }
+document.addEventListener('click', ()=>document.getElementById('menu').classList.remove('show'));
+
+/* ---------- Import / Export ---------- */
+function exportJSON(){
+  download('etudiants.json', JSON.stringify(students,null,2), 'application/json');
+  toast('Export JSON ✓');
+}
+function exportCSV(){
+  const cols = ['first','last','klass','age','email','phone','grade','notes'];
+  const head = ['Prénom','Nom','Classe','Âge','Email','Téléphone','Moyenne','Notes'];
+  const rows = students.map(s=>cols.map(c=>`"${String(s[c]??'').replace(/"/g,'""')}"`).join(','));
+  download('etudiants.csv', '﻿'+head.join(',')+'\n'+rows.join('\n'), 'text/csv');
+  toast('Export CSV ✓');
+}
+function download(name, content, type){
+  const blob = new Blob([content], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function importJSON(){ document.getElementById('fileInput').click(); }
+document.getElementById('fileInput').addEventListener('change', e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data)) throw 0;
+      data.forEach(s=>{ if(!s.id) s.id = uid(); });
+      students = data;
+      save(); render(); toast(`${data.length} étudiants importés ✓`);
+    }catch(err){ toast('Fichier JSON invalide'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function clearAll(){
+  if(confirm('Effacer TOUS les étudiants ? Cette action est irréversible.')){
+    students = []; save(); render(); toast('Base vidée');
+  }
+}
+
+/* ---------- Demo ---------- */
+function seedDemo(){
+  const demo = [
+    ['Amina','Kone','3ème A',15,'amina.kone@ecole.fr','0612345678',16.5],
+    ['Lucas','Martin','3ème A',14,'lucas.martin@ecole.fr','0623456789',11.2],
+    ['Sofia','Rossi','3ème B',15,'sofia.rossi@ecole.fr','0634567890',18.0],
+    ['Yanis','Bernard','3ème B',14,'yanis.bernard@ecole.fr','0645678901',9.5],
+    ['Emma','Dubois','4ème C',13,'emma.dubois@ecole.fr','0656789012',13.8],
+    ['Noah','Garcia','4ème C',13,'noah.garcia@ecole.fr','0667890123',15.0],
+  ];
+  if(students.length && !confirm('Ajouter les données de démo aux étudiants existants ?')) return;
+  demo.forEach(d=>students.push({
+    id:uid(), first:d[0], last:d[1], klass:d[2], age:String(d[3]),
+    email:d[4], phone:d[5], grade:String(d[6]), notes:''
+  }));
+  save(); render(); toast('Données de démo ajoutées ✓');
+}
+
+render();
+</script>
+</body>
+</html>

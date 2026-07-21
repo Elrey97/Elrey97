@@ -60,7 +60,14 @@ L'application s'ouvre alors en plein écran avec sa propre icône 💪, et fonct
 - **Compteur d'eau** 💧 (objectif 10 verres / 2,5 L)
 - **💡 Conseil du jour** : détecte les macros manquantes (protéines / glucides / lipides) et suggère des aliments précis pour combler l'écart, à ajouter au journal d'un clic
 
+### 🌐 Langues
+- Bouton **FR / RU** dans l'en-tête : interface principale, programme, exercices et groupes musculaires traduits en russe
+
 ### 🧠 Coaching
+- **✏️ Correction des saisies** : bouton ✕ dans l'historique et le détail des séances pour supprimer une entrée erronée
+- **📸 Photos de progression** : une photo par mois (stockée sur l'appareil), galerie avec dates et visionneuse plein écran
+- **🔥 Échauffement** : routine de 5 min avant chaque séance + séries d'échauffement calculées automatiquement à partir de la charge de travail (à vide → 40 % → 60 % → 80 %)
+- **⏳ Durée de séance** : mesurée automatiquement du premier au dernier exercice, affichée dans le résumé et le partage
 - **Fiches technique** ℹ️ sur chaque exercice (position, erreurs à éviter)
 - **Détail des séances passées** : clic sur un jour du calendrier → toute la séance série par série
 - **Graphique du poids corporel** avec ligne d'objectif

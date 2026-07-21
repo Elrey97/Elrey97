@@ -396,8 +396,12 @@
       <div id="jList"></div>
       <div class="addrow">
         <input type="text" id="jName" placeholder="Aliment...">
-        <input type="number" id="jKcal" placeholder="kcal" style="width:84px">
-        <input type="number" id="jProt" placeholder="prot g" style="width:84px">
+        <input type="number" id="jKcal" placeholder="kcal" style="width:78px">
+      </div>
+      <div class="addrow">
+        <input type="number" id="jProt" placeholder="prot g" style="width:82px">
+        <input type="number" id="jGluc" placeholder="gluc g" style="width:82px">
+        <input type="number" id="jLip" placeholder="lip g" style="width:82px">
         <button class="btn" id="jAdd">＋</button>
       </div>
       <div class="switchrow" style="margin-top:14px">
@@ -1342,8 +1346,15 @@ function renderProfile() {
     document.getElementById("pPoids").value = p.poids;
     document.getElementById("pAct").value = p.act;
     document.getElementById("pObj").value = p.obj;
+    if (!p.gluc) { // ancien profil sans macros : on les complète
+      p.lip = Math.round(p.poids * 1);
+      p.gluc = Math.max(0, Math.round((p.kcal - p.prot * 4 - p.lip * 9) / 4));
+      saveNutrition();
+    }
     const objLabel = { seche: "sèche", maintien: "maintien", masse: "prise de masse" }[p.obj];
-    document.getElementById("pResult").innerHTML = `Ton objectif quotidien (${objLabel}) : <b>${p.kcal} kcal</b> et <b>${p.prot} g de protéines</b>.`;
+    document.getElementById("pResult").innerHTML =
+      `Ton objectif quotidien (${objLabel}) : <b>${p.kcal} kcal</b><br>` +
+      `🥩 Protéines : <b>${p.prot} g</b> · 🍚 Glucides : <b>${p.gluc} g</b> · 🥑 Lipides (gras) : <b>${p.lip} g</b>`;
   } else if (bodyWeights.length) {
     document.getElementById("pPoids").value = bodyWeights[bodyWeights.length - 1].kg;
   }
@@ -1359,36 +1370,42 @@ document.getElementById("pCalc").onclick = () => {
   const bmr = 10 * poids + 6.25 * taille - 5 * age + (sexe === "H" ? 5 : -161); // Mifflin-St Jeor
   const adj = { seche: -400, maintien: 0, masse: 300 }[obj];
   const kcal = Math.round(bmr * act + adj);
-  const prot = Math.round(poids * (obj === "seche" ? 2.2 : 2));
-  nutrition.profile = { sexe, age, taille, poids, act, obj, kcal, prot };
+  const prot = Math.round(poids * (obj === "seche" ? 2.2 : 2));       // 2-2,2 g/kg
+  const lip = Math.round(poids * 1);                                   // 1 g/kg (gras)
+  const gluc = Math.max(0, Math.round((kcal - prot * 4 - lip * 9) / 4)); // le reste en glucides
+  nutrition.profile = { sexe, age, taille, poids, act, obj, kcal, prot, gluc, lip };
   saveNutrition(); renderProfile(); renderJournal();
-  toast(`Objectif : ${kcal} kcal / ${prot} g de protéines par jour 🎯`);
+  toast(`Objectif : ${kcal} kcal — ${prot} g prot · ${gluc} g gluc · ${lip} g lip 🎯`);
 };
 
 function renderJournal() {
   const j = jToday();
-  const kcal = j.items.reduce((s, i) => s + (i.kcal || 0), 0);
-  const prot = +j.items.reduce((s, i) => s + (i.prot || 0), 0).toFixed(1);
+  const sum = k => +j.items.reduce((s, i) => s + (i[k] || 0), 0).toFixed(1);
+  const kcal = sum("kcal"), prot = sum("prot"), gluc = sum("gluc"), lip = sum("lip");
   const p = nutrition.profile;
-  let t = `<div class="grocery-total"><span>Calories</span><span>${Math.round(kcal)}${p ? " / " + p.kcal : ""} kcal</span></div>`;
-  if (p) t += `<div class="bar"><i style="width:${Math.min(100, kcal / p.kcal * 100)}%"></i></div>`;
-  t += `<div class="grocery-total" style="font-weight:400"><span>Protéines</span><span>${prot}${p ? " / " + p.prot : ""} g</span></div>`;
-  if (p) t += `<div class="bar"><i style="width:${Math.min(100, prot / p.prot * 100)}%"></i></div>`;
-  document.getElementById("jTotals").innerHTML = t;
+  const row = (label, val, target, unit, bold) => {
+    let t = `<div class="grocery-total"${bold ? "" : ' style="font-weight:400"'}><span>${label}</span><span>${val}${target ? " / " + target : ""} ${unit}</span></div>`;
+    if (target) t += `<div class="bar"><i style="width:${Math.min(100, val / target * 100)}%"></i></div>`;
+    return t;
+  };
+  document.getElementById("jTotals").innerHTML =
+    row("Calories", Math.round(kcal), p && p.kcal, "kcal", true) +
+    row("🥩 Protéines", prot, p && p.prot, "g") +
+    row("🍚 Glucides", gluc, p && p.gluc, "g") +
+    row("🥑 Lipides (gras)", lip, p && p.lip, "g");
   document.getElementById("jList").innerHTML = j.items.map((i, idx) =>
-    `<div class="grocery-item"><div class="gi-name">${i.n} <span class="qty">· ${Math.round(i.kcal)} kcal · ${i.prot} g prot</span></div><button class="btn danger small" data-i="${idx}" style="padding:4px 9px">✕</button></div>`
+    `<div class="grocery-item"><div class="gi-name">${i.n} <span class="qty">· ${Math.round(i.kcal)} kcal · P ${i.prot || 0} · G ${i.gluc || 0} · L ${i.lip || 0}</span></div><button class="btn danger small" data-i="${idx}" style="padding:4px 9px">✕</button></div>`
   ).join("") || `<div class="hint">Ajoute ce que tu manges — à la main ou avec le scanner 📷.</div>`;
   document.querySelectorAll("#jList .btn.danger").forEach(b => b.onclick = () => { j.items.splice(+b.dataset.i, 1); saveNutrition(); renderJournal(); });
   document.getElementById("wCount").textContent = (j.water || 0) + " / 10 verres";
 }
 document.getElementById("jAdd").onclick = () => {
   const n = document.getElementById("jName").value.trim();
-  const kcal = parseFloat(document.getElementById("jKcal").value) || 0;
-  const prot = parseFloat(document.getElementById("jProt").value) || 0;
   if (!n) { toast("Indique le nom de l'aliment 😉"); return; }
-  jToday().items.push({ n, kcal, prot });
+  const val = id => parseFloat(document.getElementById(id).value) || 0;
+  jToday().items.push({ n, kcal: val("jKcal"), prot: val("jProt"), gluc: val("jGluc"), lip: val("jLip") });
   saveNutrition();
-  ["jName", "jKcal", "jProt"].forEach(id => document.getElementById(id).value = "");
+  ["jName", "jKcal", "jProt", "jGluc", "jLip"].forEach(id => document.getElementById(id).value = "");
   renderJournal();
 };
 document.getElementById("wPlus").onclick = () => { jToday().water = (jToday().water || 0) + 1; saveNutrition(); renderJournal(); if (jToday().water === 10) toast("Objectif hydratation atteint 💧🎉"); };
@@ -1432,12 +1449,16 @@ async function lookupBarcode(code) {
     const j = await r.json();
     if (!j.product) { toast("Produit introuvable 😕 — ajoute-le à la main"); closeScanner(); return; }
     const name = j.product.product_name || "Produit " + code;
-    const k100 = j.product.nutriments["energy-kcal_100g"] || 0;
-    const p100 = j.product.nutriments["proteins_100g"] || 0;
+    const nu = j.product.nutriments || {};
+    const k100 = nu["energy-kcal_100g"] || 0;
+    const p100 = nu["proteins_100g"] || 0;
+    const c100 = nu["carbohydrates_100g"] || 0;
+    const f100 = nu["fat_100g"] || 0;
     closeScanner();
-    const g = parseFloat(prompt(`${name}\n${k100} kcal / 100 g · ${p100} g de protéines / 100 g\n\nQuantité mangée (en grammes) :`, "100"));
+    const g = parseFloat(prompt(`${name}\nPour 100 g : ${k100} kcal · P ${p100} g · G ${c100} g · L ${f100} g\n\nQuantité mangée (en grammes) :`, "100"));
     if (!g) return;
-    jToday().items.push({ n: `${name} (${g} g)`, kcal: Math.round(k100 * g / 100), prot: Math.round(p100 * g / 100 * 10) / 10 });
+    const per = v => Math.round(v * g / 100 * 10) / 10;
+    jToday().items.push({ n: `${name} (${g} g)`, kcal: Math.round(k100 * g / 100), prot: per(p100), gluc: per(c100), lip: per(f100) });
     saveNutrition(); renderJournal();
     toast("Ajouté au journal ✓");
   } catch {

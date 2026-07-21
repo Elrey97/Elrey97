@@ -54,8 +54,8 @@ L'application s'ouvre alors en plein écran avec sa propre icône 💪, et fonct
 - Historique des 15 dernières performances
 
 ### 🎯 Nutrition avancée
-- **Calculateur de besoins** (Mifflin-St Jeor) : calories et protéines selon sexe, âge, taille, poids, activité et objectif (sèche / maintien / masse)
-- **Journal alimentaire du jour** avec barres de progression vers les objectifs
+- **Calculateur de besoins** (Mifflin-St Jeor) : calories et **macros complètes** — protéines (2-2,2 g/kg), lipides (1 g/kg), glucides (le reste) — selon sexe, âge, taille, poids, activité et objectif (sèche / maintien / masse)
+- **Journal alimentaire du jour** : calories + protéines + glucides + lipides, avec barres de progression vers chaque objectif
 - **Scanner de code-barres** 📷 (caméra + base Open Food Facts) pour ajouter un produit automatiquement — sur la version en ligne (GitHub Pages), Chrome Android ; saisie manuelle du code en secours
 - **Compteur d'eau** 💧 (objectif 10 verres / 2,5 L)
 

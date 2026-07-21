@@ -54,10 +54,18 @@ L'application s'ouvre alors en plein écran avec sa propre icône 💪, et fonct
 - Historique des 15 dernières performances
 
 ### 🎯 Nutrition avancée
-- **Calculateur de besoins** (Mifflin-St Jeor) : calories et protéines selon sexe, âge, taille, poids, activité et objectif (sèche / maintien / masse)
-- **Journal alimentaire du jour** avec barres de progression vers les objectifs
+- **Calculateur de besoins** (Mifflin-St Jeor) : calories et **macros complètes** — protéines (2-2,2 g/kg), lipides (1 g/kg), glucides (le reste) — selon sexe, âge, taille, poids, activité et objectif (sèche / maintien / masse)
+- **Journal alimentaire du jour** : calories + protéines + glucides + lipides, avec barres de progression vers chaque objectif
 - **Scanner de code-barres** 📷 (caméra + base Open Food Facts) pour ajouter un produit automatiquement — sur la version en ligne (GitHub Pages), Chrome Android ; saisie manuelle du code en secours
 - **Compteur d'eau** 💧 (objectif 10 verres / 2,5 L)
+- **💡 Conseil du jour** : détecte les macros manquantes (protéines / glucides / lipides) et suggère des aliments précis pour combler l'écart, à ajouter au journal d'un clic
+
+### 🧠 Coaching
+- **Fiches technique** ℹ️ sur chaque exercice (position, erreurs à éviter)
+- **Détail des séances passées** : clic sur un jour du calendrier → toute la séance série par série
+- **Graphique du poids corporel** avec ligne d'objectif
+- **📤 Partage de séance** (WhatsApp, Telegram... ou copie du résumé)
+- **♻️ Semaine de décharge** : suggérée automatiquement après 6 semaines d'entraînement consécutives
 
 ### 🍽️ Repas
 - Programme alimentaire sur 7 jours, adapté au programme d'entraînement (protéines les jours de muscu, plus léger au repos), avec des plats disponibles localement (tvorog, grechka, kéfir, syrniki...)

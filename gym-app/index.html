@@ -183,7 +183,8 @@
   .recipe .rbody ul, .recipe .rbody ol { padding-left: 20px; margin: 6px 0; }
   .recipe .rmeta { font-size: 0.78rem; color: var(--muted); }
   .setchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .setchips .chip { background: var(--accent-soft); border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600; }
+  .setchips .chip { background: var(--accent-soft); border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600; color: var(--text-primary); }
+  .tipbtn { border: none; background: none; cursor: pointer; font-size: 0.95rem; padding: 0 2px; }
   .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.78rem; }
   .cal .dow { color: var(--muted); font-size: 0.68rem; padding: 4px 0; }
   .cal .d { padding: 7px 0; border-radius: 8px; }
@@ -272,6 +273,7 @@
       </div>
       <div class="hint">Une notification t'avertira à cette heure avec la séance du jour (garde l'application ouverte ou en arrière-plan).</div>
     </div>
+    <div class="cardio-note" id="deloadNote" style="display:none"></div>
     <div class="daypicker" id="dayPicker"></div>
     <div id="dayContent"></div>
   </section>
@@ -307,6 +309,8 @@
         <div class="hint" id="streakLine" style="margin:0"></div>
       </div>
       <div class="cal" id="calGrid"></div>
+      <div class="hint">Appuie sur un jour bleu pour revoir la séance complète.</div>
+      <div id="dayDetail"></div>
     </div>
 
     <div class="card">
@@ -330,6 +334,7 @@
         <button class="btn secondary" id="goalSet">Fixer l'objectif</button>
       </div>
       <div class="hint" id="goalLine"></div>
+      <div style="margin-top:10px"><svg id="bwChart" viewBox="0 0 640 160" style="width:100%;height:auto;display:none" role="img" aria-label="Évolution du poids corporel"></svg></div>
       <div id="bwList" style="margin-top:10px"></div>
     </div>
 
@@ -393,11 +398,16 @@
         <button class="btn small" id="scanBtn">📷 Scanner</button>
       </div>
       <div id="jTotals"></div>
+      <div id="jAdvice"></div>
       <div id="jList"></div>
       <div class="addrow">
         <input type="text" id="jName" placeholder="Aliment...">
-        <input type="number" id="jKcal" placeholder="kcal" style="width:84px">
-        <input type="number" id="jProt" placeholder="prot g" style="width:84px">
+        <input type="number" id="jKcal" placeholder="kcal" style="width:78px">
+      </div>
+      <div class="addrow">
+        <input type="number" id="jProt" placeholder="prot g" style="width:82px">
+        <input type="number" id="jGluc" placeholder="gluc g" style="width:82px">
+        <input type="number" id="jLip" placeholder="lip g" style="width:82px">
         <button class="btn" id="jAdd">＋</button>
       </div>
       <div class="switchrow" style="margin-top:14px">
@@ -487,58 +497,58 @@
 /* ─────────────── PROGRAMME ─────────────── */
 const PROGRAM = [
   { id: "j1", label: "J1 · Push", title: "Jour 1 — Push (pectoraux, épaules, triceps)", exos: [
-    { n: "Développé couché barre", t: "4 × 8-10", g: "Pectoraux" },
-    { n: "Développé incliné haltères", t: "3 × 10-12", g: "Pectoraux" },
-    { n: "Développé militaire", t: "4 × 8-10", g: "Épaules" },
-    { n: "Élévations latérales", t: "3 × 12-15", g: "Épaules" },
-    { n: "Dips", t: "3 × 8-12", g: "Triceps" },
-    { n: "Extensions triceps poulie", t: "3 × 12-15", g: "Triceps" },
-    { n: "Crunch", t: "3 × 15-20", g: "Abdos" },
-    { n: "Planche", t: "3 × 45-60 s", g: "Abdos" },
+    { n: "Développé couché barre", tip: "Omoplates serrées, pieds au sol, descends la barre au niveau des tétons sans rebondir.", t: "4 × 8-10", g: "Pectoraux" },
+    { n: "Développé incliné haltères", tip: "Banc à 30-45°, coudes à ~45° du corps, descends au niveau de la poitrine.", t: "3 × 10-12", g: "Pectoraux" },
+    { n: "Développé militaire", tip: "Abdos gainés, ne cambre pas le dos, pousse la barre bien au-dessus de la tête.", t: "4 × 8-10", g: "Épaules" },
+    { n: "Élévations latérales", tip: "Coudes légèrement fléchis, monte jusqu'à l'horizontale, sans élan.", t: "3 × 12-15", g: "Épaules" },
+    { n: "Dips", tip: "Buste penché en avant pour cibler les pecs, descends jusqu'à 90° aux coudes.", t: "3 × 8-12", g: "Triceps" },
+    { n: "Extensions triceps poulie", tip: "Coudes collés au corps : seuls les avant-bras bougent.", t: "3 × 12-15", g: "Triceps" },
+    { n: "Crunch", tip: "Décolle seulement les épaules, souffle en montant, ne tire pas sur la nuque.", t: "3 × 15-20", g: "Abdos" },
+    { n: "Planche", tip: "Corps aligné des épaules aux chevilles, serre abdos et fessiers.", t: "3 × 45-60 s", g: "Abdos" },
   ]},
   { id: "j2", label: "J2 · Pull", title: "Jour 2 — Pull (dos, biceps, trapèzes)", exos: [
-    { n: "Tractions", t: "4 × 6-10", g: "Dos" },
-    { n: "Rowing barre", t: "4 × 8-10", g: "Dos" },
-    { n: "Tirage vertical poulie", t: "3 × 10-12", g: "Dos" },
-    { n: "Shrugs haltères", t: "4 × 12-15", g: "Trapèzes" },
-    { n: "Face pull", t: "3 × 12-15", g: "Trapèzes" },
-    { n: "Curl biceps barre", t: "3 × 10-12", g: "Biceps" },
-    { n: "Curl marteau", t: "3 × 12", g: "Biceps" },
+    { n: "Tractions", tip: "Poitrine vers la barre, redescends bras tendus, sans balancement.", t: "4 × 6-10", g: "Dos" },
+    { n: "Rowing barre", tip: "Dos plat penché à ~45°, tire la barre vers le nombril.", t: "4 × 8-10", g: "Dos" },
+    { n: "Tirage vertical poulie", tip: "Tire vers le haut de la poitrine, coudes vers le bas, buste presque droit.", t: "3 × 10-12", g: "Dos" },
+    { n: "Shrugs haltères", tip: "Hausse les épaules vers les oreilles, sans les rouler.", t: "4 × 12-15", g: "Trapèzes" },
+    { n: "Face pull", tip: "Tire la corde vers le visage, coudes hauts, serre les omoplates.", t: "3 × 12-15", g: "Trapèzes" },
+    { n: "Curl biceps barre", tip: "Coudes fixes le long du corps, contrôle bien la descente.", t: "3 × 10-12", g: "Biceps" },
+    { n: "Curl marteau", tip: "Prise neutre (pouces vers le haut), sans balancer le buste.", t: "3 × 12", g: "Biceps" },
     { n: "Tapis de course", t: "15-20 min, allure modérée", g: "Cardio", cardio: true },
   ]},
   { id: "j3", label: "J3 · Legs", title: "Jour 3 — Legs (jambes)", exos: [
-    { n: "Squat barre", t: "4 × 6-10", g: "Jambes" },
-    { n: "Presse à cuisses", t: "4 × 10-12", g: "Jambes" },
-    { n: "Fentes marchées", t: "3 × 12 (par jambe)", g: "Jambes" },
-    { n: "Leg curl allongé", t: "3 × 12-15", g: "Jambes" },
-    { n: "Extensions de jambes", t: "3 × 12-15", g: "Jambes" },
-    { n: "Mollets debout", t: "4 × 15-20", g: "Mollets" },
-    { n: "Relevés de jambes suspendu", t: "3 × 10-15", g: "Abdos" },
-    { n: "Russian twist", t: "3 × 20", g: "Abdos" },
+    { n: "Squat barre", tip: "Pieds largeur d'épaules, dos droit, cuisses au moins parallèles, pousse dans les talons.", t: "4 × 6-10", g: "Jambes" },
+    { n: "Presse à cuisses", tip: "Descends à 90°, ne verrouille jamais les genoux en haut.", t: "4 × 10-12", g: "Jambes" },
+    { n: "Fentes marchées", tip: "Grand pas, genou arrière vers le sol, buste bien droit.", t: "3 × 12 (par jambe)", g: "Jambes" },
+    { n: "Leg curl allongé", tip: "Hanches plaquées au banc, contrôle la remontée.", t: "3 × 12-15", g: "Jambes" },
+    { n: "Extensions de jambes", tip: "Monte en 1 seconde, redescends en 2-3 secondes.", t: "3 × 12-15", g: "Jambes" },
+    { n: "Mollets debout", tip: "Amplitude complète : étire bien en bas, contracte fort en haut.", t: "4 × 15-20", g: "Mollets" },
+    { n: "Relevés de jambes suspendu", tip: "Sans balancer, remonte légèrement le bassin en fin de mouvement.", t: "3 × 10-15", g: "Abdos" },
+    { n: "Russian twist", tip: "Buste incliné en arrière, tourne les épaules, pas seulement les bras.", t: "3 × 20", g: "Abdos" },
   ]},
   { id: "j4", label: "J4 · Repos", title: "Jour 4 — Repos actif", rest: true, exos: [
-    { n: "Marche", t: "30-40 min, rythme tranquille", g: "Cardio léger", cardio: true },
-    { n: "Étirements", t: "15-20 min, tout le corps", g: "Récupération", cardio: true },
+    { n: "Marche", tip: "Rythme où tu peux encore parler, idéalement en extérieur.", t: "30-40 min, rythme tranquille", g: "Cardio léger", cardio: true },
+    { n: "Étirements", tip: "Sans à-coups, 20-30 secondes par muscle, respire profondément.", t: "15-20 min, tout le corps", g: "Récupération", cardio: true },
   ]},
   { id: "j5", label: "J5 · Haut du corps", title: "Jour 5 — Haut du corps", exos: [
-    { n: "Développé couché haltères", t: "4 × 8-10", g: "Pectoraux" },
-    { n: "Écartés poulie", t: "3 × 12-15", g: "Pectoraux" },
-    { n: "Tractions prise large", t: "4 × 6-10", g: "Dos" },
-    { n: "Rowing poulie basse", t: "3 × 10-12", g: "Dos" },
-    { n: "Développé épaules haltères", t: "3 × 10-12", g: "Épaules" },
-    { n: "Oiseau (élévations buste penché)", t: "3 × 12-15", g: "Épaules" },
-    { n: "Barre au front", t: "3 × 10-12", g: "Triceps" },
-    { n: "Curl incliné", t: "3 × 10-12", g: "Biceps" },
-    { n: "Mountain climbers", t: "3 × 30 s", g: "Abdos" },
-    { n: "Planche latérale", t: "3 × 30 s (par côté)", g: "Abdos" },
+    { n: "Développé couché haltères", tip: "Descends plus bas qu'avec la barre, garde le contrôle total.", t: "4 × 8-10", g: "Pectoraux" },
+    { n: "Écartés poulie", tip: "Coudes légèrement fléchis, serre les pecs comme pour applaudir.", t: "3 × 12-15", g: "Pectoraux" },
+    { n: "Tractions prise large", tip: "Mains plus larges que les épaules, tire les coudes vers le bas.", t: "4 × 6-10", g: "Dos" },
+    { n: "Rowing poulie basse", tip: "Dos droit, tire vers le ventre, serre les omoplates à la fin.", t: "3 × 10-12", g: "Dos" },
+    { n: "Développé épaules haltères", tip: "Descends les haltères jusqu'aux oreilles, abdos gainés.", t: "3 × 10-12", g: "Épaules" },
+    { n: "Oiseau (élévations buste penché)", tip: "Buste penché, monte les haltères sur les côtés, omoplates serrées.", t: "3 × 12-15", g: "Épaules" },
+    { n: "Barre au front", tip: "Coudes fixes pointés vers le plafond, descends la barre vers le front.", t: "3 × 10-12", g: "Triceps" },
+    { n: "Curl incliné", tip: "Banc à 45°, bras qui pendent : étirement complet du biceps en bas.", t: "3 × 10-12", g: "Biceps" },
+    { n: "Mountain climbers", tip: "Dos plat, ramène les genoux vite mais sans lever les fesses.", t: "3 × 30 s", g: "Abdos" },
+    { n: "Planche latérale", tip: "Corps aligné, hanche haute, appui sur le coude.", t: "3 × 30 s (par côté)", g: "Abdos" },
   ]},
   { id: "j6", label: "J6 · Legs", title: "Jour 6 — Legs (chaîne postérieure)", exos: [
-    { n: "Soulevé de terre roumain", t: "4 × 8-10", g: "Jambes" },
-    { n: "Hip thrust", t: "4 × 10-12", g: "Jambes" },
-    { n: "Squat bulgare", t: "3 × 10 (par jambe)", g: "Jambes" },
-    { n: "Leg curl assis", t: "3 × 12-15", g: "Jambes" },
-    { n: "Abducteurs machine", t: "3 × 15", g: "Jambes" },
-    { n: "Mollets assis", t: "4 × 15-20", g: "Mollets" },
+    { n: "Soulevé de terre roumain", tip: "Jambes presque tendues, dos plat, barre le long des jambes : sens l'étirement des ischios.", t: "4 × 8-10", g: "Jambes" },
+    { n: "Hip thrust", tip: "Haut du dos sur le banc, pousse avec les fessiers, serre fort en haut.", t: "4 × 10-12", g: "Jambes" },
+    { n: "Squat bulgare", tip: "Pied arrière surélevé, buste droit, genou avant au-dessus du pied.", t: "3 × 10 (par jambe)", g: "Jambes" },
+    { n: "Leg curl assis", tip: "Dos plaqué, contrôle le retour, sans à-coups.", t: "3 × 12-15", g: "Jambes" },
+    { n: "Abducteurs machine", tip: "Buste légèrement penché en avant pour mieux cibler les fessiers.", t: "3 × 15", g: "Jambes" },
+    { n: "Mollets assis", tip: "Pause d'1 seconde en haut et en bas du mouvement.", t: "4 × 15-20", g: "Mollets" },
     { n: "Vélo / elliptique", t: "15-20 min", g: "Cardio", cardio: true },
   ]},
   { id: "cardio", label: "🏃 Cardio +", title: "Cardio extra (au choix, en plus du programme)", cardio: true, exos: [
@@ -802,11 +812,12 @@ function renderDay() {
     div.innerHTML = `
       <div class="exo-head">
         <div>
-          <div class="name">${e.n}</div>
+          <div class="name">${e.n} ${e.tip ? '<button class="tipbtn" title="Technique">ℹ️</button>' : ""}</div>
           <div class="target">Objectif : ${e.t}${lastTxt}${sugg}</div>
         </div>
         ${isDone ? '<span class="donebadge">✓ Fait</span>' : ""}
       </div>
+      ${e.tip ? `<div class="hint tipbox" style="display:none">🎓 ${e.tip}</div>` : ""}
       ${isDone ? "" : isCardio ? `
       <div class="inputs">
         <div><label>Minutes</label><input type="number" class="i-min" min="1" placeholder="30"></div>
@@ -820,6 +831,11 @@ function renderDay() {
         <button class="btn small secondary b-done">Terminer ✓</button>
       </div>`}
     `;
+    const tipBtn = div.querySelector(".tipbtn");
+    if (tipBtn) tipBtn.onclick = () => {
+      const box = div.querySelector(".tipbox");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    };
     if (!isDone && isCardio) {
       div.querySelector(".b-done").onclick = () => {
         const min = parseFloat(div.querySelector(".i-min").value);
@@ -894,7 +910,60 @@ function renderDay() {
     notify("Séance terminée 🎉", msg);
   };
   card.appendChild(finish);
+
+  // Partager la séance
+  const share = document.createElement("button");
+  share.className = "btn secondary";
+  share.style.cssText = "width:100%;margin-top:8px;padding:12px";
+  share.textContent = "📤 Partager la séance";
+  share.onclick = () => {
+    const todays = history.filter(h => h.date === todayISO() && h.dayId === day.id);
+    if (!todays.length) { toast("Termine d'abord un exercice 😉"); return; }
+    const vol = todays.reduce((s, h) => s + (h.volume || 0), 0);
+    const lines = todays.map(h => {
+      const det = h.minutes !== undefined ? `${h.minutes} min`
+        : h.setsList ? h.setsList.map(s => `${s.r}×${s.w}`).join(" · ") + " kg"
+        : `${h.sets}×${h.reps} @ ${h.weight} kg`;
+      return `• ${h.exo} : ${det}`;
+    });
+    let text = `💪 Ma séance — ${day.title}\n${lines.join("\n")}`;
+    if (vol) text += `\nVolume total : ${Math.round(vol)} kg`;
+    text += "\n— via Mon Gym";
+    if (navigator.share) navigator.share({ text }).catch(() => {});
+    else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast("Résumé copié — colle-le où tu veux 📋"));
+  };
+  card.appendChild(share);
   c.appendChild(card);
+  renderDeload();
+}
+
+/* ─────────────── SEMAINE DE DÉCHARGE (DELOAD) ─────────────── */
+function weeksTrainedStreak() {
+  const weekOf = iso => { const d = new Date(iso + "T12:00"); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.toISOString().slice(0, 10); };
+  const byWeek = {};
+  new Set(history.map(h => h.date + "|" + h.dayId)).forEach(k => {
+    const date = k.split("|")[0];
+    if (settings.lastDeload && date <= settings.lastDeload) return;
+    const w = weekOf(date);
+    byWeek[w] = (byWeek[w] || 0) + 1;
+  });
+  let count = 0, w = weekOf(todayISO());
+  for (let i = 0; i < 60; i++) {
+    const prev = new Date(w + "T12:00"); prev.setDate(prev.getDate() - 7); w = prev.toISOString().slice(0, 10);
+    if ((byWeek[w] || 0) >= 3) count++; else break;
+  }
+  return count;
+}
+function renderDeload() {
+  const el = document.getElementById("deloadNote");
+  const weeks = weeksTrainedStreak();
+  if (weeks >= 6) {
+    el.style.display = "block";
+    el.innerHTML = `♻️ <b>${weeks} semaines d'entraînement d'affilée — bravo !</b> Pense à une semaine de décharge : mêmes exercices, poids réduits de 40-50 %, pour récupérer et repartir plus fort. <button class="btn small" id="deloadDone" style="margin-top:6px">C'est prévu ✓</button>`;
+    document.getElementById("deloadDone").onclick = () => { settings.lastDeload = todayISO(); saveSettings(); renderDeload(); toast("Bonne récupération ! ♻️"); };
+  } else {
+    el.style.display = "none";
+  }
 }
 
 /* ─────────────── ONGLET ÉVOLUTION ─────────────── */
@@ -1043,10 +1112,11 @@ function renderProgress() {
   fillExoSelect();
   renderChart();
 
-  // body weight list
+  // body weight list + chart
   const bwl = document.getElementById("bwList");
   bwl.innerHTML = bodyWeights.slice(-8).reverse().map(b =>
     `<div class="histline"><b>${b.kg} kg</b> — ${fmtDate(b.date)}</div>`).join("") || `<div class="hint">Enregistre ton poids régulièrement (1×/semaine, le matin à jeun).</div>`;
+  renderBwChart();
 
   // history
   const hl = document.getElementById("history");
@@ -1213,11 +1283,29 @@ function renderCalendar() {
   for (let i = 0; i < startDow; i++) html += "<div></div>";
   for (let d = 1; d <= dim; d++) {
     const iso = `${y}-${String(mo + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    html += `<div class="d${trained.has(iso) ? " on" : ""}${iso === todayISO() ? " today" : ""}">${d}</div>`;
+    const on = trained.has(iso);
+    html += `<div class="d${on ? " on" : ""}${iso === todayISO() ? " today" : ""}"${on ? ` data-iso="${iso}" style="cursor:pointer"` : ""}>${d}</div>`;
   }
   grid.innerHTML = html;
+  grid.querySelectorAll(".d.on").forEach(el => el.onclick = () => showDayDetail(el.dataset.iso));
   const s = calcStreak();
   document.getElementById("streakLine").textContent = s ? `🔥 ${s} jour${s > 1 ? "s" : ""} d'affilée` : "Commence ta série 🔥";
+}
+
+function showDayDetail(iso) {
+  const entries = history.filter(h => h.date === iso);
+  const dayIds = [...new Set(entries.map(h => h.dayId))];
+  const titles = dayIds.map(id => { const d = PROGRAM.find(p => p.id === id); return d ? d.title : id; }).join(" + ");
+  const vol = entries.reduce((s, h) => s + (h.volume || 0), 0);
+  document.getElementById("dayDetail").innerHTML =
+    `<h3 style="margin-top:12px">Séance du ${fmtDate(iso)} — ${titles}</h3>` +
+    entries.map(h => {
+      const det = h.minutes !== undefined ? `${h.minutes} min`
+        : h.setsList ? h.setsList.map(s => `${s.r}×${s.w} kg`).join(" · ")
+        : `${h.sets}×${h.reps} @ ${h.weight} kg`;
+      return `<div class="histline"><b>${h.exo}</b> — ${det}</div>`;
+    }).join("") +
+    (vol ? `<div class="hint">Volume total : ${Math.round(vol)} kg</div>` : "");
 }
 
 /* ─────────────── VOLUME PAR MUSCLE & COMPARAISON ─────────────── */
@@ -1247,6 +1335,45 @@ function renderWeekCompare() {
     `<div class="histline">Séances : <b>${s1}</b>${delta(s1, s2, "")}</div>` +
     `<div class="histline">Volume soulevé : <b>${v1} kg</b>${delta(v1, v2, " kg")}</div>` +
     `<div class="hint">7 derniers jours comparés aux 7 précédents.</div>`;
+}
+
+/* ─────────────── GRAPHIQUE DU POIDS CORPOREL ─────────────── */
+function renderBwChart() {
+  const svg = document.getElementById("bwChart");
+  const data = bodyWeights.slice(-20);
+  if (data.length < 2) { svg.style.display = "none"; return; }
+  svg.style.display = "block";
+  const css = getComputedStyle(document.documentElement);
+  const C = {
+    line: css.getPropertyValue("--series-1").trim(),
+    grid: css.getPropertyValue("--grid").trim(),
+    muted: css.getPropertyValue("--muted").trim(),
+    ink: css.getPropertyValue("--text-primary").trim(),
+    surf: css.getPropertyValue("--surface-1").trim(),
+    good: css.getPropertyValue("--good").trim(),
+  };
+  const W = 640, H = 160, PAD = { l: 46, r: 18, t: 14, b: 24 };
+  const lo = Math.floor(Math.min(...data.map(d => d.kg)) - 1);
+  const hi = Math.ceil(Math.max(...data.map(d => d.kg)) + 1);
+  const xs = i => PAD.l + i * (W - PAD.l - PAD.r) / (data.length - 1);
+  const ys = v => PAD.t + (H - PAD.t - PAD.b) * (1 - (v - lo) / (hi - lo || 1));
+  let g = "";
+  for (let i = 0; i <= 2; i++) {
+    const v = lo + (hi - lo) * i / 2, y = ys(v);
+    g += `<line x1="${PAD.l}" y1="${y}" x2="${W - PAD.r}" y2="${y}" stroke="${C.grid}" stroke-width="1"/>`;
+    g += `<text x="${PAD.l - 8}" y="${y + 4}" text-anchor="end" fill="${C.muted}" font-size="11" font-family="system-ui">${Math.round(v * 10) / 10}</text>`;
+  }
+  // ligne d'objectif si définie et dans la fenêtre
+  if (settings.goalWeight && settings.goalWeight >= lo && settings.goalWeight <= hi) {
+    g += `<line x1="${PAD.l}" y1="${ys(settings.goalWeight)}" x2="${W - PAD.r}" y2="${ys(settings.goalWeight)}" stroke="${C.good}" stroke-width="1" stroke-dasharray="4 4"/>`;
+  }
+  g += `<path d="${data.map((d, i) => `${i ? "L" : "M"}${xs(i)},${ys(d.kg)}`).join(" ")}" fill="none" stroke="${C.line}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  data.forEach((d, i) => { g += `<circle cx="${xs(i)}" cy="${ys(d.kg)}" r="4" fill="${C.line}" stroke="${C.surf}" stroke-width="2"/>`; });
+  const li = data.length - 1;
+  g += `<text x="${xs(li)}" y="${ys(data[li].kg) - 9}" text-anchor="end" fill="${C.ink}" font-size="12" font-weight="600" font-family="system-ui">${data[li].kg} kg</text>`;
+  g += `<text x="${xs(0)}" y="${H - 6}" fill="${C.muted}" font-size="11" font-family="system-ui">${fmtDate(data[0].date)}</text>`;
+  g += `<text x="${xs(li)}" y="${H - 6}" text-anchor="end" fill="${C.muted}" font-size="11" font-family="system-ui">${fmtDate(data[li].date)}</text>`;
+  svg.innerHTML = g;
 }
 
 /* ─────────────── OBJECTIF DE POIDS ─────────────── */
@@ -1342,8 +1469,15 @@ function renderProfile() {
     document.getElementById("pPoids").value = p.poids;
     document.getElementById("pAct").value = p.act;
     document.getElementById("pObj").value = p.obj;
+    if (!p.gluc) { // ancien profil sans macros : on les complète
+      p.lip = Math.round(p.poids * 1);
+      p.gluc = Math.max(0, Math.round((p.kcal - p.prot * 4 - p.lip * 9) / 4));
+      saveNutrition();
+    }
     const objLabel = { seche: "sèche", maintien: "maintien", masse: "prise de masse" }[p.obj];
-    document.getElementById("pResult").innerHTML = `Ton objectif quotidien (${objLabel}) : <b>${p.kcal} kcal</b> et <b>${p.prot} g de protéines</b>.`;
+    document.getElementById("pResult").innerHTML =
+      `Ton objectif quotidien (${objLabel}) : <b>${p.kcal} kcal</b><br>` +
+      `🥩 Protéines : <b>${p.prot} g</b> · 🍚 Glucides : <b>${p.gluc} g</b> · 🥑 Lipides (gras) : <b>${p.lip} g</b>`;
   } else if (bodyWeights.length) {
     document.getElementById("pPoids").value = bodyWeights[bodyWeights.length - 1].kg;
   }
@@ -1359,36 +1493,99 @@ document.getElementById("pCalc").onclick = () => {
   const bmr = 10 * poids + 6.25 * taille - 5 * age + (sexe === "H" ? 5 : -161); // Mifflin-St Jeor
   const adj = { seche: -400, maintien: 0, masse: 300 }[obj];
   const kcal = Math.round(bmr * act + adj);
-  const prot = Math.round(poids * (obj === "seche" ? 2.2 : 2));
-  nutrition.profile = { sexe, age, taille, poids, act, obj, kcal, prot };
+  const prot = Math.round(poids * (obj === "seche" ? 2.2 : 2));       // 2-2,2 g/kg
+  const lip = Math.round(poids * 1);                                   // 1 g/kg (gras)
+  const gluc = Math.max(0, Math.round((kcal - prot * 4 - lip * 9) / 4)); // le reste en glucides
+  nutrition.profile = { sexe, age, taille, poids, act, obj, kcal, prot, gluc, lip };
   saveNutrition(); renderProfile(); renderJournal();
-  toast(`Objectif : ${kcal} kcal / ${prot} g de protéines par jour 🎯`);
+  toast(`Objectif : ${kcal} kcal — ${prot} g prot · ${gluc} g gluc · ${lip} g lip 🎯`);
 };
 
 function renderJournal() {
   const j = jToday();
-  const kcal = j.items.reduce((s, i) => s + (i.kcal || 0), 0);
-  const prot = +j.items.reduce((s, i) => s + (i.prot || 0), 0).toFixed(1);
+  const sum = k => +j.items.reduce((s, i) => s + (i[k] || 0), 0).toFixed(1);
+  const kcal = sum("kcal"), prot = sum("prot"), gluc = sum("gluc"), lip = sum("lip");
   const p = nutrition.profile;
-  let t = `<div class="grocery-total"><span>Calories</span><span>${Math.round(kcal)}${p ? " / " + p.kcal : ""} kcal</span></div>`;
-  if (p) t += `<div class="bar"><i style="width:${Math.min(100, kcal / p.kcal * 100)}%"></i></div>`;
-  t += `<div class="grocery-total" style="font-weight:400"><span>Protéines</span><span>${prot}${p ? " / " + p.prot : ""} g</span></div>`;
-  if (p) t += `<div class="bar"><i style="width:${Math.min(100, prot / p.prot * 100)}%"></i></div>`;
-  document.getElementById("jTotals").innerHTML = t;
+  const row = (label, val, target, unit, bold) => {
+    let t = `<div class="grocery-total"${bold ? "" : ' style="font-weight:400"'}><span>${label}</span><span>${val}${target ? " / " + target : ""} ${unit}</span></div>`;
+    if (target) t += `<div class="bar"><i style="width:${Math.min(100, val / target * 100)}%"></i></div>`;
+    return t;
+  };
+  document.getElementById("jTotals").innerHTML =
+    row("Calories", Math.round(kcal), p && p.kcal, "kcal", true) +
+    row("🥩 Protéines", prot, p && p.prot, "g") +
+    row("🍚 Glucides", gluc, p && p.gluc, "g") +
+    row("🥑 Lipides (gras)", lip, p && p.lip, "g");
   document.getElementById("jList").innerHTML = j.items.map((i, idx) =>
-    `<div class="grocery-item"><div class="gi-name">${i.n} <span class="qty">· ${Math.round(i.kcal)} kcal · ${i.prot} g prot</span></div><button class="btn danger small" data-i="${idx}" style="padding:4px 9px">✕</button></div>`
+    `<div class="grocery-item"><div class="gi-name">${i.n} <span class="qty">· ${Math.round(i.kcal)} kcal · P ${i.prot || 0} · G ${i.gluc || 0} · L ${i.lip || 0}</span></div><button class="btn danger small" data-i="${idx}" style="padding:4px 9px">✕</button></div>`
   ).join("") || `<div class="hint">Ajoute ce que tu manges — à la main ou avec le scanner 📷.</div>`;
   document.querySelectorAll("#jList .btn.danger").forEach(b => b.onclick = () => { j.items.splice(+b.dataset.i, 1); saveNutrition(); renderJournal(); });
   document.getElementById("wCount").textContent = (j.water || 0) + " / 10 verres";
+  renderAdvice({ kcal, prot, gluc, lip });
+}
+
+/* ─────────────── CONSEILLER : QUOI MANGER POUR COMBLER LES MACROS ─────────────── */
+const FOOD_SUGGESTIONS = {
+  prot: [
+    { n: "Tvorog (200 g)", kcal: 180, prot: 36, gluc: 6, lip: 2 },
+    { n: "Filet de poulet (150 g)", kcal: 250, prot: 35, gluc: 0, lip: 5 },
+    { n: "Thon en boîte (100 g)", kcal: 130, prot: 26, gluc: 0, lip: 2 },
+    { n: "3 œufs durs", kcal: 210, prot: 19, gluc: 1, lip: 15 },
+    { n: "Kéfir (250 ml)", kcal: 130, prot: 8, gluc: 10, lip: 6 },
+  ],
+  gluc: [
+    { n: "Riz cuit (200 g)", kcal: 260, prot: 5, gluc: 56, lip: 1 },
+    { n: "Sarrasin cuit (200 g)", kcal: 220, prot: 7, gluc: 42, lip: 2 },
+    { n: "Flocons d'avoine (60 g)", kcal: 220, prot: 8, gluc: 36, lip: 4 },
+    { n: "Pain complet (2 tranches)", kcal: 160, prot: 6, gluc: 28, lip: 2 },
+    { n: "Banane", kcal: 105, prot: 1, gluc: 27, lip: 0 },
+  ],
+  lip: [
+    { n: "Noix (30 g)", kcal: 200, prot: 4, gluc: 4, lip: 18 },
+    { n: "Huile d'olive (1 c. à s.)", kcal: 120, prot: 0, gluc: 0, lip: 14 },
+    { n: "Saumon (100 g)", kcal: 200, prot: 20, gluc: 0, lip: 13 },
+    { n: "Fromage (30 g)", kcal: 110, prot: 7, gluc: 0, lip: 9 },
+    { n: "Beurre de cacahuète (1 c. à s.)", kcal: 95, prot: 4, gluc: 3, lip: 8 },
+  ],
+};
+const MACRO_LABELS = { prot: ["🥩 protéines", 15], gluc: ["🍚 glucides", 30], lip: ["🥑 lipides", 10] };
+
+function renderAdvice(totals) {
+  const el = document.getElementById("jAdvice");
+  const p = nutrition.profile;
+  if (!p || !p.gluc) { el.innerHTML = ""; return; }
+  const gaps = { prot: p.prot - totals.prot, gluc: p.gluc - totals.gluc, lip: p.lip - totals.lip };
+  const kcalLeft = p.kcal - totals.kcal;
+  let html = "";
+  Object.entries(gaps).forEach(([m, gap]) => {
+    const [label, threshold] = MACRO_LABELS[m];
+    if (gap < threshold || kcalLeft < 50) return;
+    // les 2 aliments les mieux adaptés à l'écart restant (sans exploser les calories)
+    const picks = FOOD_SUGGESTIONS[m]
+      .filter(f => f.kcal <= kcalLeft + 100)
+      .sort((a, b) => Math.abs(a[m] - gap) - Math.abs(b[m] - gap))
+      .slice(0, 2);
+    if (!picks.length) return;
+    html += `<div style="margin:8px 0 2px;font-size:0.85rem">Il te manque <b>${Math.round(gap)} g</b> de ${label} — ajoute par exemple :</div>` +
+      `<div class="setchips">` + picks.map(f =>
+        `<button class="chip sug" data-f='${JSON.stringify(f).replace(/'/g, "&#39;")}' style="border:none;cursor:pointer;font-family:inherit">＋ ${f.n} (${f[m]} g)</button>`
+      ).join("") + `</div>`;
+  });
+  el.innerHTML = html ? `<div style="border:1px dashed var(--accent);border-radius:10px;padding:10px 12px;margin:10px 0">💡 <b>Conseil du jour</b>${html}</div>` : "";
+  el.querySelectorAll(".sug").forEach(b => b.onclick = () => {
+    const f = JSON.parse(b.dataset.f);
+    jToday().items.push(f);
+    saveNutrition(); renderJournal();
+    toast(`${f.n} ajouté au journal ✓`);
+  });
 }
 document.getElementById("jAdd").onclick = () => {
   const n = document.getElementById("jName").value.trim();
-  const kcal = parseFloat(document.getElementById("jKcal").value) || 0;
-  const prot = parseFloat(document.getElementById("jProt").value) || 0;
   if (!n) { toast("Indique le nom de l'aliment 😉"); return; }
-  jToday().items.push({ n, kcal, prot });
+  const val = id => parseFloat(document.getElementById(id).value) || 0;
+  jToday().items.push({ n, kcal: val("jKcal"), prot: val("jProt"), gluc: val("jGluc"), lip: val("jLip") });
   saveNutrition();
-  ["jName", "jKcal", "jProt"].forEach(id => document.getElementById(id).value = "");
+  ["jName", "jKcal", "jProt", "jGluc", "jLip"].forEach(id => document.getElementById(id).value = "");
   renderJournal();
 };
 document.getElementById("wPlus").onclick = () => { jToday().water = (jToday().water || 0) + 1; saveNutrition(); renderJournal(); if (jToday().water === 10) toast("Objectif hydratation atteint 💧🎉"); };
@@ -1432,12 +1629,16 @@ async function lookupBarcode(code) {
     const j = await r.json();
     if (!j.product) { toast("Produit introuvable 😕 — ajoute-le à la main"); closeScanner(); return; }
     const name = j.product.product_name || "Produit " + code;
-    const k100 = j.product.nutriments["energy-kcal_100g"] || 0;
-    const p100 = j.product.nutriments["proteins_100g"] || 0;
+    const nu = j.product.nutriments || {};
+    const k100 = nu["energy-kcal_100g"] || 0;
+    const p100 = nu["proteins_100g"] || 0;
+    const c100 = nu["carbohydrates_100g"] || 0;
+    const f100 = nu["fat_100g"] || 0;
     closeScanner();
-    const g = parseFloat(prompt(`${name}\n${k100} kcal / 100 g · ${p100} g de protéines / 100 g\n\nQuantité mangée (en grammes) :`, "100"));
+    const g = parseFloat(prompt(`${name}\nPour 100 g : ${k100} kcal · P ${p100} g · G ${c100} g · L ${f100} g\n\nQuantité mangée (en grammes) :`, "100"));
     if (!g) return;
-    jToday().items.push({ n: `${name} (${g} g)`, kcal: Math.round(k100 * g / 100), prot: Math.round(p100 * g / 100 * 10) / 10 });
+    const per = v => Math.round(v * g / 100 * 10) / 10;
+    jToday().items.push({ n: `${name} (${g} g)`, kcal: Math.round(k100 * g / 100), prot: per(p100), gluc: per(c100), lip: per(f100) });
     saveNutrition(); renderJournal();
     toast("Ajouté au journal ✓");
   } catch {
